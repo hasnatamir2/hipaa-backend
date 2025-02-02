@@ -71,29 +71,20 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-## Resources
+## Overview
+Modularity: Each feature area—authentication, users, files, folders, permissions, shared links, and activity logs—has its own dedicated module. This separation allows you to work on or modify one part without affecting the others.
 
-Check out a few resources that may come in handy when working with NestJS:
+**Clear Separation of Concerns:**
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1. *Auth Module:* Handles everything related to authentication and user entities.
+2. *Users Module:* Manages user-specific operations (CRUD, updates, etc.).
+3. *Files and Folders Modules:* Organize file storage, file uploads/downloads, and folder hierarchy management.
+4. *Permissions Module:* Manages access controls, ensuring fine-grained permission settings across files and folders.
+5. *Shared Links Module:* Deals with generating secure links, sharing functionality, and expiration logic.
+6. *Activity Logs Module:* Tracks user activity for auditing and compliance.
+7. *Common Module:* Contains utilities like constants, decorators, filters, interceptors, and pipes, which are reusable across the project.
+8. *Config Module:* Centralizes configuration settings (database, AWS, JWT, etc.) to keep your application settings organized and easily manageable.
 
-## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Scalability & Maintainability:** With this structure, as the application grows or changes, you can easily add new features or adjust existing ones without causing confusion.
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
