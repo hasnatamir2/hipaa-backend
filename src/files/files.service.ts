@@ -1,72 +1,57 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AwsConfigService } from '../config/aws.config/aws.config';
+import { EncryptionUtil } from '../common/utils/encryption.util';
+import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto'; // Assuming you have a DTO for uploads
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Folder } from 'src/folders/entities/folder.entity/folder.entity';
 import { File } from './entities/file.entity/file.entity';
-import { S3Service } from '../shared/s3/s3.service';
-import { CreateFileDto } from './dto/create-file.dto/create-file.dto';
 
 @Injectable()
 export class FilesService {
-  private readonly logger = new Logger(FilesService.name);
-
   constructor(
-    @InjectRepository(File)
-    private readonly fileRepository: Repository<File>,
-    private readonly s3Service: S3Service,
+    private readonly awsConfigService: AwsConfigService,
+    @InjectRepository(File) private fileRepository: Repository<File>,
+    @InjectRepository(Folder) private folderRepository: Repository<Folder>,
   ) {}
 
-  // Upload a file and save its metadata in the database
   async uploadFile(
-    createFileDto: CreateFileDto,
-    file: Express.Multer.File,
+    uploadFileDto: UploadFileDto,
+    fileBuffer: Buffer,
   ): Promise<File> {
-    const { folder } = createFileDto;
+    const secretKey = 'your-secret-key'; // Replace with a secure key
+    const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
+    const fileBufferEncrypted = Buffer.from(encryptedFile);
 
-    try {
-      // Upload file to S3 and get the file URL
-      const fileUrl = await this.s3Service.uploadFile(file, folder);
-
-      // Save file metadata in the database
-      const newFile = this.fileRepository.create({
-        key: `${folder}/${file.originalname}`,
-        url: fileUrl,
-        size: file.size,
-        mimeType: file.mimetype,
+    const uploadedFile = await this.awsConfigService.uploadFileToS3(
+      fileBufferEncrypted,
+      uploadFileDto.filename,
+    );
+    const file = new File();
+    file.name = uploadFileDto.filename;
+    file.url = uploadedFile;
+    // If folder ID is provided, associate file with folder
+    if (uploadFileDto.folderId) {
+      const folder = await this.folderRepository.findOne({
+        where: { id: uploadFileDto.folderId },
       });
-
-      // Save the file record
-      await this.fileRepository.save(newFile);
-      this.logger.log(`File uploaded and saved to DB: ${newFile.url}`);
-
-      return newFile;
-    } catch (error) {
-      this.logger.error(`Failed to upload file: ${error.message}`);
-      throw new Error('File upload failed');
+      if (!folder) {
+        throw new NotFoundException('Folder not found');
+      }
+      file.folder = folder;
     }
+
+    return this.fileRepository.save(file);
   }
 
-  // Download a file from S3
   async downloadFile(fileKey: string): Promise<Buffer> {
-    try {
-      return await this.s3Service.downloadFile(fileKey);
-    } catch (error) {
-      this.logger.error(`Failed to download file: ${error.message}`);
-      throw new Error('File download failed');
-    }
-  }
+    const secretKey = 'your-secret-key'; // Replace with the same key
+    const fileData = await this.awsConfigService.downloadFileFromS3(fileKey);
 
-  // Delete a file from S3 and remove its record from the database
-  async deleteFile(fileKey: string): Promise<void> {
-    try {
-      // Delete the file from S3
-      await this.s3Service.deleteFile(fileKey);
-
-      // Delete the file record from the database
-      await this.fileRepository.delete({ key: fileKey });
-      this.logger.log(`File deleted from S3 and DB: ${fileKey}`);
-    } catch (error) {
-      this.logger.error(`Failed to delete file: ${error.message}`);
-      throw new Error('File deletion failed');
+    if (!fileData.Body || !(fileData.Body instanceof Buffer)) {
+      throw new Error('Invalid file data');
     }
+    const encryptedFile = fileData.Body.toString('utf-8'); // Convert from Buffer to string
+    return EncryptionUtil.decryptFile(encryptedFile, secretKey);
   }
 }

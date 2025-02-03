@@ -1,6 +1,12 @@
-import { IsString } from '@nestjs/class-validator';
+import { IsString, IsOptional } from '@nestjs/class-validator';
 
 export class CreateFileDto {
   @IsString()
-  folder: string; // The folder in which the file will be stored
+  filename: string;
+
+  @IsString()
+  filepath: string;
+
+  @IsOptional()
+  folderId?: number; // Optional folder ID for associating the file to a folder
 }

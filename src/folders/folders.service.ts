@@ -1,25 +1,58 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Folder } from './entities/folder.entity/folder.entity';
 import { CreateFolderDto } from './dto/create-folder.dto/create-folder.dto';
-import { FilesService } from '../files/files.service';
+import { UpdateFolderDto } from './dto/update-folder.dto/update-folder.dto';
+import { File } from '../files/entities/file.entity/file.entity';
 
 @Injectable()
 export class FoldersService {
-  private readonly logger = new Logger(FoldersService.name);
+  constructor(
+    @InjectRepository(Folder) private folderRepository: Repository<Folder>,
+    @InjectRepository(File) private fileRepository: Repository<File>,
+  ) {}
 
-  constructor(private readonly filesService: FilesService) {}
-
-  // Create a folder (in terms of a prefix in S3)
-  async createFolder(createFolderDto: CreateFolderDto): Promise<string> {
-    const { folderName } = createFolderDto;
-
-    // Simulate folder creation by handling folder names as prefixes
-    this.logger.log(`Folder created: ${folderName}`);
-
-    return `Folder ${folderName} created successfully`;
+  async create(createFolderDto: CreateFolderDto): Promise<Folder> {
+    const folder = this.folderRepository.create(createFolderDto);
+    return this.folderRepository.save(folder);
   }
 
-  // Get all files within a folder
-  async getFilesInFolder(folderName: string): Promise<File[]> {
-    return await this.filesService.getFilesInFolder(folderName);
+  async update(id: number, updateFolderDto: UpdateFolderDto): Promise<Folder> {
+    const folder = await this.folderRepository.findOne({ where: { id } });
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    Object.assign(folder, updateFolderDto);
+    return this.folderRepository.save(folder);
+  }
+
+  async delete(id: number): Promise<void> {
+    const folder = await this.folderRepository.findOne({ where: { id } });
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    await this.folderRepository.remove(folder);
+  }
+
+  async assignFileToFolder(folderId: number, fileId: number): Promise<Folder> {
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+    });
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    const file = await this.fileRepository.findOne({ where: { id: fileId } });
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    file.folder = folder;
+    await this.fileRepository.save(file);
+
+    return folder;
   }
 }

@@ -1,6 +1,6 @@
 // src/files/dto/upload-file.dto.ts
 
-import { IsString, IsNotEmpty } from '@nestjs/class-validator';
+import { IsString, IsNotEmpty, IsOptional } from '@nestjs/class-validator';
 
 export class UploadFileDto {
   @IsString()
@@ -13,4 +13,7 @@ export class UploadFileDto {
 
   @IsNotEmpty()
   size: number;
+
+  @IsOptional()
+  folderId?: number;
 }

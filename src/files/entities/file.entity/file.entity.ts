@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
 
 @Entity()
 export class File {
@@ -16,4 +23,11 @@ export class File {
 
   @Column()
   mimeType: string;
+
+  @Column()
+  name: string;
+
+  @ManyToOne(() => Folder, (folder) => folder.files, { nullable: true })
+  @JoinColumn({ name: 'folderId' })
+  folder: Folder;
 }

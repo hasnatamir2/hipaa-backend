@@ -1,16 +1,15 @@
 import {
   Controller,
   Post,
-  Body,
   UploadedFile,
   UseInterceptors,
   Get,
   Param,
-  Delete,
+  Body,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { CreateFileDto } from './dto/create-file.dto/create-file.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto';
 
 @Controller('files')
 export class FilesController {
@@ -18,20 +17,16 @@ export class FilesController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async upload(
-    @Body() createFileDto: CreateFileDto,
+  async uploadFile(
+    @Body() uploadFileDto: UploadFileDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.filesService.uploadFile(createFileDto, file);
+    return this.filesService.uploadFile(uploadFileDto, file.buffer);
   }
 
-  @Get(':fileKey')
-  async download(@Param('fileKey') fileKey: string) {
-    return this.filesService.downloadFile(fileKey);
-  }
-
-  @Delete(':fileKey')
-  async delete(@Param('fileKey') fileKey: string) {
-    return this.filesService.deleteFile(fileKey);
+  @Get('download/:fileKey')
+  async downloadFile(@Param('fileKey') fileKey: string) {
+    const decryptedFileBuffer = await this.filesService.downloadFile(fileKey);
+    return decryptedFileBuffer;
   }
 }

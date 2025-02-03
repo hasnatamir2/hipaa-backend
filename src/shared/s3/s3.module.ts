@@ -1,6 +1,7 @@
+// src/shared/s3/s3.module.ts
 import { Module } from '@nestjs/common';
-import { S3Service } from './s3.service';
 import { ConfigModule } from '@nestjs/config';
+import { S3Service } from './s3.service';
 
 @Module({
   imports: [ConfigModule],
