@@ -18,6 +18,8 @@ import { AwsSdkModule } from 'nest-aws-sdk';
 import { S3 } from 'aws-sdk';
 import { AwsConfigService } from './config/aws.config/aws.config.service';
 import { S3Module } from './shared/s3/s3.module';
+import { JwtStrategy } from './auth/guards/strategies/jwt.strategy';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -46,10 +48,13 @@ import { S3Module } from './shared/s3/s3.module';
       },
       services: [S3],
     }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET_KEY,
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService, AwsConfigService],
-  // exports: [S3Service],
+  providers: [AppService, AwsConfigService, JwtStrategy],
+  exports: [JwtStrategy],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}

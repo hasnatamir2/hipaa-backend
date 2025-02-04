@@ -3,8 +3,8 @@ import { File } from '../../../files/entities/file.entity/file.entity';
 
 @Entity()
 export class Folder {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ unique: true })
   name: string;

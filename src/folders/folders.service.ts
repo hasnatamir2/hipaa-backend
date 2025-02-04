@@ -18,7 +18,7 @@ export class FoldersService {
     return this.folderRepository.save(folder);
   }
 
-  async update(id: number, updateFolderDto: UpdateFolderDto): Promise<Folder> {
+  async update(id: string, updateFolderDto: UpdateFolderDto): Promise<Folder> {
     const folder = await this.folderRepository.findOne({ where: { id } });
     if (!folder) {
       throw new NotFoundException('Folder not found');
@@ -28,7 +28,7 @@ export class FoldersService {
     return this.folderRepository.save(folder);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     const folder = await this.folderRepository.findOne({ where: { id } });
     if (!folder) {
       throw new NotFoundException('Folder not found');
@@ -37,7 +37,7 @@ export class FoldersService {
     await this.folderRepository.remove(folder);
   }
 
-  async assignFileToFolder(folderId: number, fileId: number): Promise<Folder> {
+  async assignFileToFolder(folderId: string, fileId: string): Promise<Folder> {
     const folder = await this.folderRepository.findOne({
       where: { id: folderId },
     });

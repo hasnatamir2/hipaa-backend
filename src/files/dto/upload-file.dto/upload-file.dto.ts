@@ -15,5 +15,5 @@ export class UploadFileDto {
   size: number;
 
   @IsOptional()
-  folderId?: number;
+  folderId?: string;
 }

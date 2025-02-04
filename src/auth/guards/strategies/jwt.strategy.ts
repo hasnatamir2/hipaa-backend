@@ -3,15 +3,18 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { AuthService } from '../../auth.service';
 import { JwtPayload } from '../../interfaces/jwt-payload.interface';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private authService: AuthService) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {
     super({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET_KEY,
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('JWT_SECRET'),
     });
   }
 
@@ -40,4 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
   }
+  // validate(payload: any) {
+  //   return { id: payload.sub, username: payload.username };
+  // }
 }

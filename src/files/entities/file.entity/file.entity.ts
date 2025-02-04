@@ -9,8 +9,8 @@ import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
 
 @Entity()
 export class File {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   key: string; // File's key in S3 (path in the bucket)

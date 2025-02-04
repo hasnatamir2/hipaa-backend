@@ -13,19 +13,19 @@ export class FoldersController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() updateFolderDto: UpdateFolderDto) {
+  update(@Param('id') id: string, @Body() updateFolderDto: UpdateFolderDto) {
     return this.foldersService.update(id, updateFolderDto);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
+  delete(@Param('id') id: string) {
     return this.foldersService.delete(id);
   }
 
   @Post(':folderId/assign-file/:fileId')
   assignFileToFolder(
-    @Param('folderId') folderId: number,
-    @Param('fileId') fileId: number,
+    @Param('folderId') folderId: string,
+    @Param('fileId') fileId: string,
   ) {
     return this.foldersService.assignFileToFolder(folderId, fileId);
   }
