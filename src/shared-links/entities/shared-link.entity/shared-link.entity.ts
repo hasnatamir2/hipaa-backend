@@ -1,5 +1,5 @@
-import { Entity, Column, ManyToOne } from 'typeorm';
-import { File } from '../../files/entities/file.entity';
+import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { File } from '../../../files/entities/file.entity/file.entity';
 
 @Entity()
 export class SharedLink {

@@ -13,10 +13,11 @@ import { SharedLinksModule } from './shared-links/shared-links.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity/user.entity';
-import { S3Service } from './shared/s3/s3.service';
+// import { S3Service } from './shared/s3/s3.service';
 import { AwsSdkModule } from 'nest-aws-sdk';
 import { S3 } from 'aws-sdk';
-import { AwsConfigService } from './config/aws.config/aws.config';
+import { AwsConfigService } from './config/aws.config/aws.config.service';
+import { S3Module } from './shared/s3/s3.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AwsConfigService } from './config/aws.config/aws.config';
     PermissionsModule,
     SharedLinksModule,
     ActivityLogsModule,
+    S3Module,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -37,7 +39,7 @@ import { AwsConfigService } from './config/aws.config/aws.config';
       entities: [User],
       synchronize: true,
     }),
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     AwsSdkModule.forRoot({
       defaultServiceOptions: {
         region: process.env.AWS_REGION,
@@ -47,7 +49,7 @@ import { AwsConfigService } from './config/aws.config/aws.config';
   ],
   controllers: [AppController],
   providers: [AppService, AwsConfigService],
-  exports: [S3Service],
+  // exports: [S3Service],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}
