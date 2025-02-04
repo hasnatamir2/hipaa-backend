@@ -28,7 +28,7 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
-  async updateUserRole(id: number, role: UserRole): Promise<User> {
+  async updateUserRole(id: string, role: UserRole): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new Error('User not found');

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AwsConfigService } from '../config/aws.config/aws.config';
+import { AwsConfigService } from '../config/aws.config/aws.config.service';
 import { EncryptionUtil } from '../common/utils/encryption.util';
 import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto'; // Assuming you have a DTO for uploads
 import { InjectRepository } from '@nestjs/typeorm';
