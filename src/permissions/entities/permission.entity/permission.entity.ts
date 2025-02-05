@@ -1,22 +1,35 @@
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from '../../../users/entities/user.entity/user.entity';
-import { UserRole } from '../../../common/constants/roles/roles';
-import { Folder } from 'src/folders/entities/folder.entity/folder.entity';
+import { File } from '../../../files/entities/file.entity/file.entity';
+import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
+import { PermissionLevel } from '../../constants/permission-level.enum';
 
 @Entity()
 export class Permission {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'enum', enum: UserRole })
-  permissionLevel: UserRole;
+  @Column({ type: 'boolean', default: false })
+  canRead: boolean;
 
-  @ManyToOne(() => User)
+  @Column({ type: 'boolean', default: false })
+  canWrite: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  canShare: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  canDelete: boolean;
+
+  @ManyToOne(() => User, (user) => user.permissions)
   user: User;
 
-  @ManyToOne(() => File)
+  @ManyToOne(() => File, (file) => file.permissions, { nullable: true })
   file: File;
 
-  @ManyToOne(() => Folder)
+  @ManyToOne(() => Folder, (folder) => folder.permissions, { nullable: true })
   folder: Folder;
+
+  @Column({ type: 'enum', enum: PermissionLevel })
+  permissionLevel: PermissionLevel;
 }
