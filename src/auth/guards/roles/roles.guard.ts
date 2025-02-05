@@ -1,7 +1,7 @@
 // src/auth/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from 'src/common/constants/roles/roles';
+import { UserRole } from 'src/common/constants/roles/roles.enum';
 import { ROLES_KEY } from 'src/common/decorators/roles/roles';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';

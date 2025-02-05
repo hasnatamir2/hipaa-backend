@@ -12,7 +12,7 @@ import { SetPermissionDto } from './dto/set-permission.dto/set-permission.dto';
 import {
   PermissionLevel,
   ResourceType,
-} from './constants/permission-level.enum';
+} from '../common/constants/permission-level/permission-level.enum';
 
 @Controller('permissions')
 export class PermissionsController {

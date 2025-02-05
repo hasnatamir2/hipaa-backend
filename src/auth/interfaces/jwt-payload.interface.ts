@@ -1,4 +1,4 @@
-import { UserRole } from 'src/common/constants/roles/roles';
+import { UserRole } from 'src/common/constants/roles/roles.enum';
 
 // src/auth/interfaces/jwt-payload.interface.ts
 export interface JwtPayload {
