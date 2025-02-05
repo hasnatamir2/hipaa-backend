@@ -4,8 +4,10 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
+import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 
 @Entity()
 export class File {
@@ -30,4 +32,7 @@ export class File {
   @ManyToOne(() => Folder, (folder) => folder.files, { nullable: true })
   @JoinColumn({ name: 'folderId' })
   folder: Folder;
+
+  @OneToMany(() => Permission, (permission) => permission.file)
+  permissions: Permission[];
 }
