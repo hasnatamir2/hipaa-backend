@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from '../../../users/entities/user.entity/user.entity';
 import { File } from '../../../files/entities/file.entity/file.entity';
 import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
-import { PermissionLevel } from '../../constants/permission-level.enum';
+import { PermissionLevel } from '../../../common/constants/permission-level/permission-level.enum';
 
 @Entity()
 export class Permission {

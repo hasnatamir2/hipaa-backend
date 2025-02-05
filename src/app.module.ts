@@ -20,6 +20,7 @@ import { AwsConfigService } from './config/aws.config/aws.config.service';
 import { S3Module } from './shared/s3/s3.module';
 import { JwtStrategy } from './auth/guards/strategies/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { JwtModule } from '@nestjs/jwt';
     JwtModule.register({
       secret: process.env.JWT_SECRET_KEY,
     }),
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AwsConfigService, JwtStrategy],

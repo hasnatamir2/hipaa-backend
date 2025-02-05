@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity/user.entity';
-import { UserRole } from 'src/common/constants/roles/roles';
+import { UserRole } from 'src/common/constants/roles/roles.enum';
 
 @Injectable()
 export class UsersService {

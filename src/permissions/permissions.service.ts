@@ -9,7 +9,9 @@ import { Folder } from '../folders/entities/folder.entity/folder.entity';
 import {
   PermissionLevel,
   ResourceType,
-} from './constants/permission-level.enum';
+} from '../common/constants/permission-level/permission-level.enum';
+import { NotificationService } from '../notifications/notifications.service';
+import { NOTIFICATIONS_TYPE } from 'src/common/constants/notifications/notifications-type.enum';
 
 @Injectable()
 export class PermissionsService {
@@ -22,6 +24,7 @@ export class PermissionsService {
     private readonly fileRepository: Repository<File>,
     @InjectRepository(Folder)
     private readonly folderRepository: Repository<Folder>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async setPermission(
@@ -84,6 +87,12 @@ export class PermissionsService {
     } else {
       permission.folder = resource;
     }
+    this.notificationService.sendNotification({
+      // TODO: integrate 3rd party notification service
+      type: NOTIFICATIONS_TYPE.EMAIL,
+      recipient: user.email,
+      message: `You have been granted new permissions on ${resource.name}`,
+    });
 
     return this.permissionRepository.save(permission);
   }
