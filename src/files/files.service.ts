@@ -1,33 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Folder } from 'src/folders/entities/folder.entity/folder.entity';
 import { File } from './entities/file.entity/file.entity';
+import { Folder } from '../folders/entities/folder.entity/folder.entity';
 import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto';
-import { SupabaseService } from '../shared/supabase/supabase.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FilesService {
+  private supabase: SupabaseClient;
+
   constructor(
-    private readonly supabaseService: SupabaseService,
     @InjectRepository(File) private fileRepository: Repository<File>,
     @InjectRepository(Folder) private folderRepository: Repository<Folder>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL') || '';
+    const supabaseKey =
+      this.configService.get<string>('SUPABASE_ANON_KEY') || '';
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
 
   async uploadFile(
     uploadFileDto: UploadFileDto,
     fileBuffer: Buffer,
   ): Promise<File> {
-    const uploadedFile = await this.supabaseService.uploadFile(
-      uploadFileDto.filename,
-      fileBuffer,
-    );
+    const { data, error } = await this.supabase.storage
+      .from('files')
+      .upload(uploadFileDto.filename, fileBuffer);
+
+    if (error) {
+      throw new Error('File upload failed: ' + error.message);
+    }
 
     const file = new File();
     file.name = uploadFileDto.filename;
-    file.url = uploadedFile.publicURL; // Get the public URL of the file
+    file.url = data.path;
 
-    // If folder ID is provided, associate file with folder
     if (uploadFileDto.folderId) {
       const folder = await this.folderRepository.findOne({
         where: { id: uploadFileDto.folderId },
@@ -42,12 +52,14 @@ export class FilesService {
   }
 
   async downloadFile(fileKey: string): Promise<Buffer> {
-    const fileData = await this.supabaseService.downloadFile(fileKey);
+    const { data, error } = await this.supabase.storage
+      .from('files')
+      .download(fileKey);
 
-    if (!fileData) {
-      throw new Error('File not found in Supabase storage');
+    if (error || !data) {
+      throw new NotFoundException('File not found');
     }
 
-    return fileData; // Assuming it's already a buffer
+    return Buffer.from(await data.arrayBuffer());
   }
 }

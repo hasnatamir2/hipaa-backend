@@ -4,12 +4,13 @@ import { RolesGuard } from './auth/guards/roles/roles.guard';
 import { Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { LoggingInterceptor } from './common/interceptors/logging/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalGuards(new RolesGuard(new Reflector(), app.get(JwtService)));
-
+  app.useGlobalInterceptors(new LoggingInterceptor());
   // Apply ValidationPipe globally for DTO validation
   app.useGlobalPipes(new ValidationPipe());
 
