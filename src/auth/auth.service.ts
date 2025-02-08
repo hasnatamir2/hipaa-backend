@@ -26,10 +26,18 @@ export class AuthService {
     return user;
   }
 
-  login(user: User) {
+  generateToken(user: User) {
     const payload: JwtPayload = { id: user.id, role: user.role };
+    return this.jwtService.sign(payload);
+  }
+
+  async login(user: User) {
+    const validateUser = await this.validateUser(user);
+    if (!validateUser) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.generateToken(validateUser),
     };
   }
 

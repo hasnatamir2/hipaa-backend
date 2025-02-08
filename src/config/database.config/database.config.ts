@@ -7,10 +7,13 @@ export const DatabaseConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => ({
   type: 'postgres',
-  host: configService.get<string>('DB_HOST') || 'your-supabase-host',
+  url: configService.get<string>('SUPABASE_URL') || 'your-database-url',
+  host: configService.get<string>('SUPABASE_DB_HOST') || 'your-supabase-host',
   port: Number(configService.get<number>('DB_PORT')) || 5432, // Ensuring that it's a number
-  username: configService.get<string>('DB_USERNAME') || 'your-username',
-  password: configService.get<string>('DB_PASSWORD') || 'your-password',
+  username:
+    configService.get<string>('SUPABASE_DB_USERNAME') || 'your-username',
+  password:
+    configService.get<string>('SUPABASE_DB_PASSWORD') || 'your-password',
   database: configService.get<string>('DB_NAME') || 'your-database',
   synchronize: true, // Make sure to set it to 'false' in production
   autoLoadEntities: true,
