@@ -8,9 +8,8 @@ export class EncryptionUtil {
     );
   }
 
-  static decryptFile(encryptedFile: string, secretKey: string): Buffer {
-    const bytes = CryptoJS.AES.decrypt(encryptedFile, secretKey);
-    const decryptedFile = bytes.toString(CryptoJS.enc.Utf8);
-    return Buffer.from(decryptedFile, 'base64');
+  static decryptFile(encryptedData: string, secretKey: string): string {
+    const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8) as string; // Assuming it's a UTF-8 string
   }
 }

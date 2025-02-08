@@ -14,8 +14,8 @@ export class File {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  key: string; // File's key in S3 (path in the bucket)
+  // @Column()
+  // key: string; // File's key in S3 (path in the bucket)
 
   @Column()
   url: string; // URL to access the file
@@ -23,8 +23,8 @@ export class File {
   @Column()
   size: number;
 
-  @Column()
-  mimeType: string;
+  // @Column()
+  // mimeType: string;
 
   @Column()
   name: string;
