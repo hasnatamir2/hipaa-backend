@@ -7,13 +7,6 @@ export class UploadFileDto {
   @IsNotEmpty()
   filename: string;
 
-  @IsString()
-  @IsNotEmpty()
-  mimetype: string;
-
-  @IsNotEmpty()
-  size: number;
-
   @IsOptional()
   folderId?: string;
 }
