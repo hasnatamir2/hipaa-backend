@@ -12,7 +12,6 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { SharedLinksModule } from './shared-links/shared-links.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { AuthModule } from './auth/auth.module';
-// import { User } from './users/entities/user.entity/user.entity';
 // import { S3Service } from './shared/s3/s3.service';
 // import { AwsSdkModule } from 'nest-aws-sdk';
 // import { S3 } from 'aws-sdk';

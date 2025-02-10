@@ -17,7 +17,7 @@ export class CreateSharedLinkDto {
 
   @IsOptional()
   @IsDateString()
-  expiresAt?: string; // Optional expiration date
+  expiresAt?: Date; // Optional expiration date
 
   readonly linkToken: string;
 }

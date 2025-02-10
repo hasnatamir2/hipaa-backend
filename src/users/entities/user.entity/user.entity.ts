@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { UserRole } from '../../../common/constants/roles/roles.enum';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
+import { File } from 'src/files/entities/file.entity/file.entity';
 
 @Entity()
 export class User {
@@ -24,4 +25,7 @@ export class User {
 
   @OneToMany(() => Permission, (permission) => permission.user)
   permissions: Permission[];
+
+  @OneToMany(() => File, (file) => file.owner)
+  files: File[];
 }
