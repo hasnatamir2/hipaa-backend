@@ -10,50 +10,40 @@ import { SharedLink } from './entities/shared-link.entity/shared-link.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateSharedLinkDto } from './dto/create-shared-link.dto/create-shared-link.dto';
 import * as bcrypt from 'bcrypt'; // For password hashing
-import { v4 as uuidv4 } from 'uuid'; // To generate secure link tokens
 import { File } from '../files/entities/file.entity/file.entity'; // Import File entity
 import { User } from '../users/entities/user.entity/user.entity'; // Import User entity
+import * as CryptoJS from 'crypto-js';
+
 @Injectable()
 export class SharedLinksService {
   constructor(
     @InjectRepository(SharedLink)
     private sharedLinksRepository: Repository<SharedLink>,
-    @InjectRepository(File)
-    private readonly fileRepository: Repository<File>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(File) private fileRepository: Repository<File>,
+    @InjectRepository(User) private userRepository: Repository<User>,
   ) {}
 
   async create(
     createSharedLinkDto: CreateSharedLinkDto,
     userId: string,
   ): Promise<SharedLink> {
-    const file = await this.fileRepository.findOne({
-      where: { id: createSharedLinkDto.fileId },
-    });
-    if (!file) {
-      throw new NotFoundException('File not found');
-    }
+    const { fileId, password, expiresAt } = createSharedLinkDto;
+    console.log(fileId);
+    const file = await this.fileRepository.find({ where: { id: fileId } });
+    if (!file) throw new NotFoundException('File not found');
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
-    const { password, expiresAt } = createSharedLinkDto;
+    // Generate a secure token
+    const linkToken = CryptoJS.lib.WordArray.random(16).toString();
 
-    const linkToken = uuidv4(); // Generate a secure, unique token for the link
-
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-
-    const body = {
-      password: hashedPassword,
-      file,
-      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-      generatedBy: user, // Link to the user who generated it
-      linkToken,
-    };
-    const sharedLink = this.sharedLinksRepository.create(body);
+    const sharedLink = new SharedLink();
+    sharedLink.linkToken = linkToken;
+    sharedLink.password = password ? await bcrypt.hash(password, 10) : null;
+    sharedLink.expiresAt = expiresAt;
+    sharedLink.file = file[0];
+    sharedLink.generatedBy = user;
 
     return this.sharedLinksRepository.save(sharedLink);
   }
@@ -69,10 +59,12 @@ export class SharedLinksService {
     }
 
     if (sharedLink.expiresAt && sharedLink.expiresAt < new Date()) {
+      sharedLink.isActive = false;
+      await this.sharedLinksRepository.save(sharedLink);
       throw new ForbiddenException('Link has expired.');
     }
 
-    if (sharedLink.password) {
+    if (sharedLink.password && password) {
       const isPasswordValid = await bcrypt.compare(
         password,
         sharedLink.password,
@@ -81,6 +73,10 @@ export class SharedLinksService {
         throw new ForbiddenException('Invalid password.');
       }
     }
+
+    // Increment the download count
+    sharedLink.downloads += 1;
+    await this.sharedLinksRepository.save(sharedLink);
 
     return sharedLink;
   }

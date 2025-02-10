@@ -7,13 +7,19 @@ import {
   Param,
   Body,
   Res,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto';
 import { Response } from 'express';
+import { File } from './entities/file.entity/file.entity';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
 
 @Controller('files')
+@UseGuards(JwtAuthGuard)
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
@@ -22,8 +28,10 @@ export class FilesController {
   async uploadFile(
     @Body() uploadFileDto: UploadFileDto,
     @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
   ) {
-    return this.filesService.uploadFile(uploadFileDto, file.buffer);
+    const user = req.user; // get the user from request (from JWT)
+    return this.filesService.uploadFile(uploadFileDto, file.buffer, user);
   }
 
   @Get('download/:fileKey')
@@ -40,5 +48,27 @@ export class FilesController {
     // } catch (error) {
     //   res.status(HttpStatus.NOT_FOUND).json({ message: error.message });
     // }
+  }
+
+  @Get()
+  async getFiles(
+    @Query('folderId') folderId: string,
+    @Req() req: any,
+  ): Promise<File[]> {
+    try {
+      const user = req.user; // get the user from request (from JWT)
+      return await this.filesService.getFiles(folderId, user);
+    } catch (error: any) {
+      throw new Error(`Failed to get files ERROR: ${error.message}`);
+    }
+  }
+
+  @Get(':id')
+  async getFileDetails(
+    @Param('id') fileId: string,
+    @Req() req: any,
+  ): Promise<File> {
+    const user = req.user; // get the user from request (from JWT)
+    return await this.filesService.getFileDetails(fileId, user);
   }
 }

@@ -8,10 +8,17 @@ import { Folder } from '../folders/entities/folder.entity/folder.entity'; // <--
 import { ConfigModule } from '../config/config.module';
 import { S3Module } from 'src/shared/s3/s3.module';
 import { SupabaseService } from 'src/shared/supabase/supabase.service';
+import { User } from 'src/users/entities/user.entity/user.entity';
+import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([File, Folder]), ConfigModule, S3Module],
+  imports: [
+    TypeOrmModule.forFeature([File, Folder, User, Permission]),
+    ConfigModule,
+    S3Module,
+  ],
   controllers: [FilesController],
   providers: [FilesService, SupabaseService],
+  exports: [TypeOrmModule],
 })
 export class FilesModule {}

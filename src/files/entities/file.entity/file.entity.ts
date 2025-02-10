@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { Folder } from '../../../folders/entities/folder.entity/folder.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
+import { User } from 'src/users/entities/user.entity/user.entity';
+import { SharedLink } from 'src/shared-links/entities/shared-link.entity/shared-link.entity';
 
 @Entity()
 export class File {
@@ -29,10 +31,19 @@ export class File {
   @Column()
   name: string;
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastModified: Date;
+
   @ManyToOne(() => Folder, (folder) => folder.files, { nullable: true })
   @JoinColumn({ name: 'folderId' })
   folder: Folder;
 
   @OneToMany(() => Permission, (permission) => permission.file)
   permissions: Permission[];
+
+  @ManyToOne(() => User, (user) => user.files)
+  owner: User;
+
+  @OneToMany(() => SharedLink, (sharedLink) => sharedLink.file)
+  sharedLinks: SharedLink[];
 }

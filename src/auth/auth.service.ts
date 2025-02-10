@@ -16,7 +16,17 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(payload: JwtPayload): Promise<User | null> {
+  async validateUser(payload: User): Promise<User | null> {
+    const user = await this.usersRepository.findOne({
+      where: { email: payload.email },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return user;
+  }
+
+  async getUserById(payload: JwtPayload): Promise<User | null> {
     const user = await this.usersRepository.findOne({
       where: { id: payload.id },
     });
