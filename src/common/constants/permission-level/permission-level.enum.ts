@@ -9,3 +9,10 @@ export enum ResourceType {
   FILE = 'file',
   FOLDER = 'folder',
 }
+
+export const Level = [
+  PermissionLevel.VIEW, // 0 min
+  PermissionLevel.SHARE, // 1
+  PermissionLevel.EDIT, // 2
+  PermissionLevel.ADMIN, // 3 max
+];

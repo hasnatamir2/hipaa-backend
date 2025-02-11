@@ -7,11 +7,13 @@ import { User } from '../users/entities/user.entity/user.entity';
 import { File } from '../files/entities/file.entity/file.entity';
 import { Folder } from '../folders/entities/folder.entity/folder.entity';
 import {
+  Level,
   PermissionLevel,
   ResourceType,
 } from '../common/constants/permission-level/permission-level.enum';
 import { NotificationService } from '../notifications/notifications.service';
 import { NOTIFICATIONS_TYPE } from 'src/common/constants/notifications/notifications-type.enum';
+import { UpdatePermissionDto } from './dto/update-permission.dto/update-permission.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -44,22 +46,18 @@ export class PermissionsService {
       resourceType === ResourceType.FILE ? null : dto.resourceId,
     );
 
-    if (!userPermission) {
-      throw new ForbiddenException(
-        'You do not have access to this file or folder.',
-      );
-    }
-
-    // Validate if the user has enough permission level
-    if (
-      !this.canGrantPermission(
-        userPermission.permissionLevel,
-        newPermissionLevel,
-      )
-    ) {
-      throw new ForbiddenException(
-        'You do not have sufficient permission to grant this level.',
-      );
+    if (userPermission) {
+      // Validate if the user has enough permission level
+      if (
+        !this.canGrantPermission(
+          userPermission.permissionLevel,
+          newPermissionLevel,
+        )
+      ) {
+        throw new ForbiddenException(
+          'You do not have sufficient permission to grant this level.',
+        );
+      }
     }
 
     let resource;
@@ -81,6 +79,7 @@ export class PermissionsService {
     permission.canWrite = dto.canWrite;
     permission.canShare = dto.canShare;
     permission.canDelete = dto.canDelete;
+    permission.permissionLevel = newPermissionLevel;
 
     if (resourceType === ResourceType.FILE) {
       permission.file = resource;
@@ -116,6 +115,69 @@ export class PermissionsService {
     return query.getMany();
   }
 
+  async updatePermission(
+    updatePermissionDto: UpdatePermissionDto,
+    resourceType: ResourceType,
+    permissionLevel: PermissionLevel,
+    resourceId: string,
+    userId: string,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new ForbiddenException('User not found');
+
+    // Fetch user's current permission for the file/folder
+    const userPermission = await this.getUserPermission(
+      user.id,
+      resourceType === ResourceType.FOLDER ? null : resourceId,
+      resourceType === ResourceType.FILE ? null : resourceId,
+    );
+
+    if (!userPermission) {
+      throw new ForbiddenException(
+        'You do not have access to this file or folder.',
+      );
+    }
+
+    // Validate if the user has enough permission level
+    if (
+      !this.canGrantPermission(userPermission.permissionLevel, permissionLevel)
+    ) {
+      throw new ForbiddenException(
+        'You do not have sufficient permission to grant this level.',
+      );
+    }
+
+    let resource;
+    if (resourceType === ResourceType.FILE) {
+      resource = await this.fileRepository.findOne({
+        where: { id: resourceId },
+      });
+      if (!resource) throw new Error('File not found');
+    } else {
+      resource = await this.folderRepository.findOne({
+        where: { id: resourceId },
+      });
+      if (!resource) throw new Error('Folder not found');
+    }
+
+    const permission = new Permission();
+    permission.user = user;
+    permission.canRead = Boolean(updatePermissionDto.canRead);
+    permission.canWrite = Boolean(updatePermissionDto.canWrite);
+    permission.canShare = Boolean(updatePermissionDto.canShare);
+    permission.canDelete = Boolean(updatePermissionDto.canDelete);
+
+    if (resourceType === ResourceType.FILE) {
+      permission.file = resource;
+    } else {
+      permission.folder = resource;
+    }
+
+    return this.permissionRepository.save(permission);
+  }
+
   //
   //
   //
@@ -142,15 +204,8 @@ export class PermissionsService {
     userPermissionLevel: PermissionLevel,
     newPermissionLevel: PermissionLevel,
   ) {
-    const levels = [
-      PermissionLevel.VIEW,
-      PermissionLevel.SHARE,
-      PermissionLevel.EDIT,
-      PermissionLevel.ADMIN,
-    ];
-
-    const userLevelIndex = levels.indexOf(userPermissionLevel);
-    const newLevelIndex = levels.indexOf(newPermissionLevel);
+    const userLevelIndex = Level.indexOf(userPermissionLevel);
+    const newLevelIndex = Level.indexOf(newPermissionLevel);
 
     return userLevelIndex >= newLevelIndex;
   }
