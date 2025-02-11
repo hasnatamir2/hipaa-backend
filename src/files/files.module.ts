@@ -10,15 +10,17 @@ import { S3Module } from 'src/shared/s3/s3.module';
 import { SupabaseService } from 'src/shared/supabase/supabase.service';
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
+import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([File, Folder, User, Permission]),
+    TypeOrmModule.forFeature([File, Folder, User, Permission, ActivityLog]),
     ConfigModule,
     S3Module,
   ],
   controllers: [FilesController],
-  providers: [FilesService, SupabaseService],
+  providers: [FilesService, SupabaseService, ActivityLogsService],
   exports: [TypeOrmModule],
 })
 export class FilesModule {}

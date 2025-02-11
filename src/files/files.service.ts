@@ -14,6 +14,8 @@ import { EncryptionUtil } from 'src/common/utils/encryption.util';
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 import { UserRole } from 'src/common/constants/roles/roles.enum';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
 
 @Injectable()
 export class FilesService {
@@ -25,6 +27,7 @@ export class FilesService {
     @InjectRepository(Folder) private folderRepository: Repository<Folder>,
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
+    private readonly activityLogService: ActivityLogsService,
 
     private configService: ConfigService,
   ) {
@@ -80,6 +83,12 @@ export class FilesService {
       }
       file.folder = folder;
     }
+    await this.activityLogService.logAction(
+      user.id,
+      ActivityLogType.UPLOAD,
+      undefined,
+      'FILE',
+    );
 
     return this.fileRepository.save(file);
   }
@@ -139,7 +148,12 @@ export class FilesService {
     ) {
       throw new ForbiddenException('Access denied');
     }
-
+    await this.activityLogService.logAction(
+      user.id,
+      ActivityLogType.DOWNLOAD,
+      fileId,
+      'FILE',
+    );
     return file;
   }
 

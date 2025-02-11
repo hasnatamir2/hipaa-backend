@@ -14,6 +14,8 @@ import {
 import { NotificationService } from '../notifications/notifications.service';
 import { NOTIFICATIONS_TYPE } from 'src/common/constants/notifications/notifications-type.enum';
 import { UpdatePermissionDto } from './dto/update-permission.dto/update-permission.dto';
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
 
 @Injectable()
 export class PermissionsService {
@@ -27,6 +29,7 @@ export class PermissionsService {
     @InjectRepository(Folder)
     private readonly folderRepository: Repository<Folder>,
     private readonly notificationService: NotificationService,
+    private readonly activityLogService: ActivityLogsService,
   ) {}
 
   async setPermission(
@@ -174,6 +177,13 @@ export class PermissionsService {
     } else {
       permission.folder = resource;
     }
+
+    await this.activityLogService.logAction(
+      user.id,
+      ActivityLogType.PERMISSION_CHANGED,
+      resourceId,
+      resourceType,
+    );
 
     return this.permissionRepository.save(permission);
   }
