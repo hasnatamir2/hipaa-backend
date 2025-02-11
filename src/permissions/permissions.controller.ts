@@ -4,8 +4,8 @@ import {
   Body,
   Param,
   Get,
-  Req,
-  ForbiddenException,
+  UseGuards,
+  Put,
 } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
 import { SetPermissionDto } from './dto/set-permission.dto/set-permission.dto';
@@ -13,22 +13,20 @@ import {
   PermissionLevel,
   ResourceType,
 } from '../common/constants/permission-level/permission-level.enum';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
+import { UpdatePermissionDto } from './dto/update-permission.dto/update-permission.dto';
 
 @Controller('permissions')
+@UseGuards(JwtAuthGuard)
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
   @Post(':resourceType')
   async setPermission(
-    @Req() req: any,
     @Param('resourceType') resourceType: ResourceType,
     @Body() setPermissionDto: SetPermissionDto,
     @Body('permissionLevel') permissionLevel: PermissionLevel,
   ) {
-    const user = req.user; // Assuming req.user contains the authenticated user
-    if (!user) {
-      throw new ForbiddenException('Unauthorized request');
-    }
     return this.permissionsService.setPermission(
       setPermissionDto,
       resourceType,
@@ -46,6 +44,23 @@ export class PermissionsController {
       userId,
       resourceId,
       resourceType,
+    );
+  }
+
+  @Put(':resourceType/:resourceId/user/:userId')
+  async updatePermission(
+    @Param('resourceType') resourceType: ResourceType,
+    @Param('resourceId') resourceId: string,
+    @Param('userId') userId: string,
+    @Body() updatePermissionDto: UpdatePermissionDto,
+    @Body('permissionLevel') permissionLevel: PermissionLevel,
+  ) {
+    return this.permissionsService.updatePermission(
+      updatePermissionDto,
+      resourceType,
+      permissionLevel,
+      resourceId,
+      userId,
     );
   }
 }
