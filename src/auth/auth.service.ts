@@ -48,6 +48,7 @@ export class AuthService {
     }
     return {
       access_token: this.generateToken(validateUser),
+      user: validateUser,
     };
   }
 

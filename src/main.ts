@@ -14,6 +14,12 @@ async function bootstrap() {
   // Apply ValidationPipe globally for DTO validation
   app.useGlobalPipes(new ValidationPipe());
 
+  app.enableCors({
+    origin: 'http://localhost:3001', // Allow requests from your frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
+
   await app.listen(3000);
 }
 bootstrap();
