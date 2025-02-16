@@ -36,18 +36,15 @@ export class FilesController {
 
   @Get('download/:fileKey')
   async downloadFile(@Param('fileKey') fileKey: string, @Res() res: Response) {
-    const fileBuffer = await this.filesService.downloadFile(fileKey);
+    // const fileBuffer = await this.filesService.downloadFile(fileKey);
     res.set({
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${fileKey}"`,
     });
 
-    // Send the file data as a buffer
-    res.end(fileBuffer);
-    // try {
-    // } catch (error) {
-    //   res.status(HttpStatus.NOT_FOUND).json({ message: error.message });
-    // }
+    const fileStream = await this.filesService.downloadFile(fileKey);
+
+    fileStream.pipe(res);
   }
 
   @Get()
