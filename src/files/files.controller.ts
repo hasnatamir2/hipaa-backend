@@ -38,7 +38,7 @@ export class FilesController {
   async downloadFile(@Param('fileKey') fileKey: string, @Res() res: Response) {
     // const fileBuffer = await this.filesService.downloadFile(fileKey);
     res.set({
-      'Content-Type': 'application/pdf',
+      'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${fileKey}"`,
     });
 

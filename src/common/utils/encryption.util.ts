@@ -4,22 +4,11 @@ import { Buffer } from 'buffer';
 export class EncryptionUtil {
   // AES-256 encryption
   static encryptFile(data: Buffer, secretKey: string): string {
-    const iv = CryptoJS.lib.WordArray.random(16); // Generate 16-byte IV (AES block size)
     const encrypted = CryptoJS.AES.encrypt(
-      CryptoJS.lib.WordArray.create(data),
+      CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(data.toString())),
       secretKey,
-      {
-        iv: iv,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      },
     );
-
-    // Return IV + encrypted data as base64
-    const encryptedData = encrypted.toString(); // AES encrypted base64
-    const ivBase64 = iv.toString(CryptoJS.enc.Base64); // Base64 encoded IV
-
-    return `${ivBase64}:${encryptedData}`; // Concatenate IV and encrypted data with ":"
+    return encrypted.toString();
   }
 
   // AES-256 decryption
@@ -40,12 +29,37 @@ export class EncryptionUtil {
       { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 },
     );
 
-    const decryptedData = decrypted.toString(CryptoJS.enc.Utf8);
-    if (!decryptedData) {
-      throw new Error('Decryption failed');
-    }
-
+    // const decryptedData = decrypted.toString(
+    //   CryptoJS.enc.Utf8
+    // );
+    // if (!decryptedData) {
+    //   throw new Error('Decryption failed');
+    // }
+    const decryptedData = Buffer.from(
+      decrypted.toString(CryptoJS.enc.Base64),
+      'base64',
+    );
     return decryptedData;
+  }
+
+  static decryptFileSimplified(encryptedData: string, secretKey: string) {
+    try {
+      // Decrypt the data using AES
+      const decrypted = CryptoJS.AES.decrypt(encryptedData, secretKey);
+
+      // Check if decryption is successful
+      if (!decrypted || !decrypted.sigBytes) {
+        throw new Error('Decryption failed or invalid data');
+      }
+
+      // Convert the decrypted data to a hexadecimal string and then to a Buffer
+      const decryptedData = decrypted.toString(CryptoJS.format.Hex);
+      const buffer = Buffer.from(decryptedData, 'hex');
+      return buffer;
+    } catch (err) {
+      console.error('Error during decryption:', err);
+      return null; // Return null if decryption fails
+    }
   }
 
   // convertWordArrayToUint8Array(wordArray: string) {

@@ -17,6 +17,7 @@ import { UserRole } from 'src/common/constants/roles/roles.enum';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
 import { Readable } from 'stream';
+import * as fs from 'fs';
 
 @Injectable()
 export class FilesService {
@@ -41,9 +42,9 @@ export class FilesService {
       this.configService.get<string>('SUPABASE_BUCKET_NAME') || 'files';
   }
 
-  private blobToBase64(arrayBuffer: any): string {
-    return Buffer.from(arrayBuffer).toString('base64');
-  }
+  // private blobToBase64(arrayBuffer: any): string {
+  //   return Buffer.from(arrayBuffer).toString('base64');
+  // }
 
   async uploadFile(
     uploadFileDto: UploadFileDto,
@@ -52,17 +53,14 @@ export class FilesService {
   ): Promise<File> {
     const secretKey =
       this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file';
-    const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
-    // const fileBufferEncrypted = Buffer.from(encryptedFile);
+    console.log('FILE SIZE UPLOADED', fileBuffer.length);
+    // const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
 
     const uniqueFilename = `${Date.now()}-${uploadFileDto.filename}`;
-    console.log('Encrypted Data:', encryptedFile);
 
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
-      .upload(uniqueFilename, encryptedFile, {
-        contentType: 'application/octet-stream',
-      });
+      .upload(uniqueFilename, fileBuffer);
 
     if (error) {
       throw new Error('File upload failed: ' + error.message);
@@ -100,15 +98,21 @@ export class FilesService {
     if (error || !data) {
       throw new NotFoundException('File not found');
     }
-    const arrayBuffer = await data.text();
-    // console.log('Encrypted Data:----', arrayBuffer);
-    // const encryptedBase64 = this.blobToBase64(arrayBuffer);
-    const decryptedFile = EncryptionUtil.decryptFile(
-      arrayBuffer,
-      this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file',
-    );
 
-    return this.createReadStream(decryptedFile);
+    // const arrayBuffer = await data.text();
+    // const encryptedBase64 = this.bufferToBase64(
+    //   Buffer.from(await data.arrayBuffer()),
+    // );
+    // const decryptedFile = EncryptionUtil.decryptFileSimplified(
+    //   encryptedBase64,
+    //   this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file',
+    // );
+    // const decryptedBlob = new Blob([decryptedFile]);
+
+    // console.log('FILE SIZE DOWNLOAD', decryptedFile?.length);
+    const arrayBuffer = await data.arrayBuffer();
+    const decryptedBuffer = Buffer.from(arrayBuffer);
+    return this.createReadStream(decryptedBuffer);
   }
 
   async getFiles(folderId: string, user: User): Promise<File[]> {
@@ -187,5 +191,9 @@ export class FilesService {
     stream.push(buffer);
     stream.push(null); // End the stream
     return stream;
+  }
+
+  private bufferToBase64(blob: Buffer): string {
+    return blob.toString('base64');
   }
 }
