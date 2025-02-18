@@ -13,14 +13,28 @@ import { FoldersService } from './folders.service';
 import { CreateFolderDto } from './dto/create-folder.dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto/update-folder.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
+import { Folder } from './entities/folder.entity/folder.entity';
 
 @Controller('folders')
 export class FoldersController {
   constructor(private readonly foldersService: FoldersService) {}
 
   @Post()
-  create(@Body() createFolderDto: CreateFolderDto) {
-    return this.foldersService.create(createFolderDto);
+  @UseGuards(JwtAuthGuard)
+  create(@Body() createFolderDto: CreateFolderDto, @Req() req: any) {
+    const user = req?.user;
+    return this.foldersService.create(createFolderDto, user);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getFolders(@Req() req: any): Promise<Folder[]> {
+    try {
+      const user = req.user; // get the user from request (from JWT)
+      return await this.foldersService.getFoldersByUserId(user);
+    } catch (error: any) {
+      throw new Error(`Failed to get files ERROR: ${error.message}`);
+    }
   }
 
   // get files in folder based on permission level

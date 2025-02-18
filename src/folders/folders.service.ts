@@ -26,8 +26,25 @@ export class FoldersService {
     private permissionRepository: Repository<Permission>,
   ) {}
 
-  async create(createFolderDto: CreateFolderDto): Promise<Folder> {
-    const folder = this.folderRepository.create(createFolderDto);
+  async create(createFolderDto: CreateFolderDto, user: User): Promise<Folder> {
+    const userData = await this.userRepository.findOne({
+      where: { id: user.id },
+    });
+
+    if (!userData) {
+      throw new NotFoundException('User not found');
+    }
+
+    const folder = new Folder();
+    folder.owner = userData;
+    folder.name = createFolderDto.name;
+    const defaultPermission = new Permission();
+    defaultPermission.canDelete = true;
+    defaultPermission.canRead = true;
+    defaultPermission.canShare = true;
+    defaultPermission.canWrite = true;
+    defaultPermission.permissionLevel = PermissionLevel.ADMIN;
+    folder.permissions = [defaultPermission];
     return this.folderRepository.save(folder);
   }
 
@@ -50,7 +67,17 @@ export class FoldersService {
     await this.folderRepository.remove(folder);
   }
 
-  async getFilesInFolder(folderId: string, user: User): Promise<File[]> {
+  async getFoldersByUserId(user: User): Promise<Folder[]> {
+    if (!user)
+      throw new ForbiddenException(
+        'You do not have permission to view this folder',
+      );
+    return await this.folderRepository.find({
+      where: { owner: { id: user.id } },
+    });
+  }
+
+  async getFilesInFolder(folderId: string, user: User): Promise<Folder> {
     // Get the user and their permissions
     const userResponse = await this.userRepository.findOne({
       where: { id: user.id },
@@ -83,6 +110,8 @@ export class FoldersService {
       );
     }
     const accessibleFiles: File[] = folder.files;
+    const responseFolder = folder;
+    responseFolder.files = accessibleFiles;
 
     // NOT COMPUTE FRIENDLY but something like this
     // TODO: check file-level permissions on when file is accessed
@@ -101,7 +130,7 @@ export class FoldersService {
     //   }
     // }
 
-    return accessibleFiles;
+    return responseFolder;
   }
 
   async assignFileToFolder(folderId: string, fileId: string): Promise<Folder> {

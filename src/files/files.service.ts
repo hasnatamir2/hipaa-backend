@@ -16,6 +16,8 @@ import { Permission } from 'src/permissions/entities/permission.entity/permissio
 import { UserRole } from 'src/common/constants/roles/roles.enum';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
+import { Readable } from 'stream';
+import * as fs from 'fs';
 
 @Injectable()
 export class FilesService {
@@ -40,14 +42,9 @@ export class FilesService {
       this.configService.get<string>('SUPABASE_BUCKET_NAME') || 'files';
   }
 
-  private async blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob); // Converts to base64
-    });
-  }
+  // private blobToBase64(arrayBuffer: any): string {
+  //   return Buffer.from(arrayBuffer).toString('base64');
+  // }
 
   async uploadFile(
     uploadFileDto: UploadFileDto,
@@ -56,14 +53,14 @@ export class FilesService {
   ): Promise<File> {
     const secretKey =
       this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file';
-    const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
-    const fileBufferEncrypted = Buffer.from(encryptedFile);
+    console.log('FILE SIZE UPLOADED', fileBuffer.length);
+    // const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
 
     const uniqueFilename = `${Date.now()}-${uploadFileDto.filename}`;
 
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
-      .upload(uniqueFilename, fileBufferEncrypted);
+      .upload(uniqueFilename, fileBuffer);
 
     if (error) {
       throw new Error('File upload failed: ' + error.message);
@@ -93,7 +90,7 @@ export class FilesService {
     return this.fileRepository.save(file);
   }
 
-  async downloadFile(fileKey: string): Promise<Buffer> {
+  async downloadFile(fileKey: string) {
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
       .download(fileKey);
@@ -102,13 +99,20 @@ export class FilesService {
       throw new NotFoundException('File not found');
     }
 
-    const encryptedBase64 = await this.blobToBase64(data);
-    const decryptedFile = EncryptionUtil.decryptFile(
-      encryptedBase64,
-      this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file',
-    );
+    // const arrayBuffer = await data.text();
+    // const encryptedBase64 = this.bufferToBase64(
+    //   Buffer.from(await data.arrayBuffer()),
+    // );
+    // const decryptedFile = EncryptionUtil.decryptFileSimplified(
+    //   encryptedBase64,
+    //   this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file',
+    // );
+    // const decryptedBlob = new Blob([decryptedFile]);
 
-    return Buffer.from(decryptedFile, 'utf8');
+    // console.log('FILE SIZE DOWNLOAD', decryptedFile?.length);
+    const arrayBuffer = await data.arrayBuffer();
+    const decryptedBuffer = Buffer.from(arrayBuffer);
+    return this.createReadStream(decryptedBuffer);
   }
 
   async getFiles(folderId: string, user: User): Promise<File[]> {
@@ -135,6 +139,7 @@ export class FilesService {
   async getFileDetails(fileId: string, user: User): Promise<File> {
     const file = await this.fileRepository.findOne({
       where: { id: fileId },
+      relations: ['owner'],
     });
 
     if (!file) {
@@ -179,5 +184,16 @@ export class FilesService {
 
     // If none of the above conditions are met, the user does not have access
     return false;
+  }
+
+  createReadStream(buffer: Buffer): Readable {
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null); // End the stream
+    return stream;
+  }
+
+  private bufferToBase64(blob: Buffer): string {
+    return blob.toString('base64');
   }
 }
