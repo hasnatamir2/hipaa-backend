@@ -7,12 +7,16 @@ import { File } from '../files/entities/file.entity/file.entity';
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
+import { PermissionsService } from 'src/permissions/permissions.service';
+import { NotificationsModule } from '../notifications/notifications.module'; // Import NotificationsModule here
+import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Folder, File, User, Permission, ActivityLog]),
+    NotificationsModule,
   ],
   controllers: [FoldersController],
-  providers: [FoldersService],
+  providers: [FoldersService, PermissionsService, ActivityLogsService],
 })
 export class FoldersModule {}

@@ -3342,6 +3342,11 @@ file-entry-cache@^8.0.0:
   dependencies:
     flat-cache "^4.0.0"
 
+file-type-mime@^0.4.6:
+  version "0.4.6"
+  resolved "https://registry.yarnpkg.com/file-type-mime/-/file-type-mime-0.4.6.tgz#890c548c9c10320ee23c4b59d1feb9a0f415f19c"
+  integrity sha512-5jlSZixW0z7Avy9DsORN6U8bFs6l0G3jnLxp4CcDNo7Z3AlXAR9ArUVqkv/DlhTHQo8kBbRCWGtULdTejFEf1w==
+
 file-type@^19.0.0, file-type@^19.6.0:
   version "19.6.0"
   resolved "https://registry.yarnpkg.com/file-type/-/file-type-19.6.0.tgz#b43d8870453363891884cf5e79bb3e4464f2efd3"

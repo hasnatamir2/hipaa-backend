@@ -37,12 +37,14 @@ export class FilesController {
   @Get('download/:fileKey')
   async downloadFile(@Param('fileKey') fileKey: string, @Res() res: Response) {
     // const fileBuffer = await this.filesService.downloadFile(fileKey);
-    res.set({
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${fileKey}"`,
-    });
 
-    const fileStream = await this.filesService.downloadFile(fileKey);
+    const { filebuffer, file } = await this.filesService.downloadFile(fileKey);
+    const fileStream = this.filesService.createReadStream(filebuffer);
+    res.set({
+      'Content-Type': file.mimeType,
+      'Content-Disposition': `attachment; filename="${fileKey}"`,
+      'Content-Length': filebuffer.length,
+    });
 
     fileStream.pipe(res);
   }

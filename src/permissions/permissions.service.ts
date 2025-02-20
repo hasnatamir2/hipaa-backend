@@ -99,6 +99,19 @@ export class PermissionsService {
     return this.permissionRepository.save(permission);
   }
 
+  async setDefaultFolderPermissions(folder: Folder, user: User): Promise<void> {
+    const permission = new Permission();
+    permission.folder = folder;
+    permission.user = user;
+    permission.canRead = true;
+    permission.canWrite = true;
+    permission.canDelete = true;
+    permission.canShare = true;
+    permission.permissionLevel = PermissionLevel.ADMIN;
+
+    await this.permissionRepository.save(permission);
+  }
+
   async getPermissions(
     userId: string,
     resourceId: string,
@@ -186,6 +199,10 @@ export class PermissionsService {
     );
 
     return this.permissionRepository.save(permission);
+  }
+
+  async deletePermissionsByFolderId(folderId: string): Promise<void> {
+    await this.permissionRepository.delete({ folder: { id: folderId } });
   }
 
   //

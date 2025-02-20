@@ -24,9 +24,15 @@ export class Folder {
   @ManyToOne(() => User, (user) => user.folders)
   owner: User;
 
-  @OneToMany(() => Permission, (permission) => permission.folder)
+  @OneToMany(() => Permission, (permission) => permission.folder, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   permissions: Permission[];
 
-  @OneToMany(() => ActivityLog, (activityLog) => activityLog.folder)
+  @OneToMany(() => ActivityLog, (activityLog) => activityLog.folder, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   activityLogs: ActivityLog[]; // Relation to track user activity logs
 }
