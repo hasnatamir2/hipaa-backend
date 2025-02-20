@@ -17,7 +17,7 @@ import { UserRole } from 'src/common/constants/roles/roles.enum';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
 import { Readable } from 'stream';
-import * as fs from 'fs';
+import { parse } from 'file-type-mime';
 
 @Injectable()
 export class FilesService {
@@ -53,14 +53,15 @@ export class FilesService {
   ): Promise<File> {
     const secretKey =
       this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file';
-    console.log('FILE SIZE UPLOADED', fileBuffer.length);
-    // const encryptedFile = EncryptionUtil.encryptFile(fileBuffer, secretKey);
+    EncryptionUtil.encryptFile(fileBuffer, secretKey);
+    const fileType = parse(fileBuffer);
 
     const uniqueFilename = `${Date.now()}-${uploadFileDto.filename}`;
-
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
-      .upload(uniqueFilename, fileBuffer);
+      .upload(uniqueFilename, fileBuffer, {
+        contentType: fileType?.mime,
+      });
 
     if (error) {
       throw new Error('File upload failed: ' + error.message);
@@ -70,6 +71,7 @@ export class FilesService {
     file.url = data.fullPath;
     file.size = fileBuffer.byteLength;
     file.owner = user;
+    file.mimeType = fileType?.mime || 'application/octet-stream';
 
     if (uploadFileDto.folderId) {
       const folder = await this.folderRepository.findOne({
@@ -83,7 +85,7 @@ export class FilesService {
     await this.activityLogService.logAction(
       user.id,
       ActivityLogType.UPLOAD,
-      undefined,
+      file.id,
       'FILE',
     );
 
@@ -94,8 +96,11 @@ export class FilesService {
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
       .download(fileKey);
+    const file = await this.fileRepository.findOne({
+      where: { url: `${this.bucketName}/${fileKey}` },
+    });
 
-    if (error || !data) {
+    if (error || !data || !file) {
       throw new NotFoundException('File not found');
     }
 
@@ -112,7 +117,10 @@ export class FilesService {
     // console.log('FILE SIZE DOWNLOAD', decryptedFile?.length);
     const arrayBuffer = await data.arrayBuffer();
     const decryptedBuffer = Buffer.from(arrayBuffer);
-    return this.createReadStream(decryptedBuffer);
+    return {
+      filebuffer: decryptedBuffer,
+      file,
+    };
   }
 
   async getFiles(folderId: string, user: User): Promise<File[]> {

@@ -15,6 +15,7 @@ import {
   Level,
   PermissionLevel,
 } from 'src/common/constants/permission-level/permission-level.enum';
+import { PermissionsService } from 'src/permissions/permissions.service';
 
 @Injectable()
 export class FoldersService {
@@ -24,28 +25,28 @@ export class FoldersService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async create(createFolderDto: CreateFolderDto, user: User): Promise<Folder> {
-    const userData = await this.userRepository.findOne({
-      where: { id: user.id },
-    });
+    // const userData = await this.userRepository.findOne({
+    //   where: { id: user.id },
+    // });
 
-    if (!userData) {
-      throw new NotFoundException('User not found');
-    }
+    // if (!userData) {
+    //   throw new NotFoundException('User not found');
+    // }
 
     const folder = new Folder();
-    folder.owner = userData;
+    folder.owner = user;
     folder.name = createFolderDto.name;
-    const defaultPermission = new Permission();
-    defaultPermission.canDelete = true;
-    defaultPermission.canRead = true;
-    defaultPermission.canShare = true;
-    defaultPermission.canWrite = true;
-    defaultPermission.permissionLevel = PermissionLevel.ADMIN;
-    folder.permissions = [defaultPermission];
-    return this.folderRepository.save(folder);
+
+    const savedFolder = await this.folderRepository.save(folder);
+    await this.permissionsService.setDefaultFolderPermissions(
+      savedFolder,
+      user,
+    );
+    return savedFolder;
   }
 
   async update(id: string, updateFolderDto: UpdateFolderDto): Promise<Folder> {
@@ -63,6 +64,8 @@ export class FoldersService {
     if (!folder) {
       throw new NotFoundException('Folder not found');
     }
+
+    await this.permissionsService.deletePermissionsByFolderId(id);
 
     await this.folderRepository.remove(folder);
   }

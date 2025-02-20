@@ -7,7 +7,7 @@ import { Permission } from './entities/permission.entity/permission.entity';
 import { User } from '../users/entities/user.entity/user.entity';
 import { File } from '../files/entities/file.entity/file.entity';
 import { Folder } from '../folders/entities/folder.entity/folder.entity';
-import { NotificationsModule } from '../notifications/notifications.module'; // Import NotificationsModule here
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
 

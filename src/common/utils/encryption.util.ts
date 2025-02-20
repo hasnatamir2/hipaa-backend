@@ -1,13 +1,20 @@
 import * as CryptoJS from 'crypto-js';
 import { Buffer } from 'buffer';
+import { createCipheriv, randomBytes } from 'crypto';
 
 export class EncryptionUtil {
   // AES-256 encryption
   static encryptFile(data: Buffer, secretKey: string): string {
-    const encrypted = CryptoJS.AES.encrypt(
-      CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(data.toString())),
-      secretKey,
-    );
+    const key = randomBytes(32); // AES-256 Key
+    const iv = randomBytes(16); // Initialization Vector
+    console.log('KEY:', key);
+    console.log('IV:', iv);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
+    // const encrypted = CryptoJS.AES.encrypt(
+    //   CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(data.toString())),
+    //   secretKey,
+    // );
     return encrypted.toString();
   }
 
