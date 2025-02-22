@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   Get,
   Param,
@@ -12,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UploadFileDto } from './dto/upload-file.dto/upload-file.dto';
 import { Response } from 'express';
 import { File } from './entities/file.entity/file.entity';
@@ -31,7 +32,18 @@ export class FilesController {
     @Req() req: any,
   ) {
     const user = req.user; // get the user from request (from JWT)
-    return this.filesService.uploadFile(uploadFileDto, file.buffer, user);
+    return this.filesService.uploadFile(uploadFileDto, file, user);
+  }
+
+  @Post('bulk-upload')
+  @UseInterceptors(FilesInterceptor('files'))
+  async bulkUploadFile(
+    @Body() uploadFileDto: UploadFileDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Req() req: any,
+  ) {
+    const user = req.user; // get the user from request (from JWT)
+    return this.filesService.bulkUploadFile(uploadFileDto, files, user);
   }
 
   @Get('download/:fileKey')
