@@ -75,9 +75,14 @@ export class FoldersService {
       throw new ForbiddenException(
         'You do not have permission to view this folder',
       );
-    return await this.folderRepository.find({
-      where: { owner: { id: user.id } },
-    });
+    const folder: Folder[] = await this.folderRepository
+      .createQueryBuilder('folder')
+      .leftJoinAndSelect('folder.files', 'file') // Joining the files table
+      .where('folder.owner = :userId', { userId: user.id }) // Filter by user
+      .loadRelationCountAndMap('folder.totalFiles', 'folder.files') // Count files per folder
+      .getMany();
+
+    return folder;
   }
 
   async getFilesInFolder(folderId: string, user: User): Promise<Folder> {

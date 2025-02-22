@@ -48,15 +48,16 @@ export class FilesService {
 
   async uploadFile(
     uploadFileDto: UploadFileDto,
-    fileBuffer: Buffer,
+    file: Express.Multer.File,
     user: User,
   ): Promise<File> {
     const secretKey =
       this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file';
+    const fileBuffer = file.buffer;
     EncryptionUtil.encryptFile(fileBuffer, secretKey);
     const fileType = parse(fileBuffer);
 
-    const uniqueFilename = `${Date.now()}-${uploadFileDto.filename}`;
+    const uniqueFilename = `${Date.now()}-${file.originalname}`;
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
       .upload(uniqueFilename, fileBuffer, {
@@ -66,12 +67,12 @@ export class FilesService {
     if (error) {
       throw new Error('File upload failed: ' + error.message);
     }
-    const file = new File();
-    file.name = uploadFileDto.filename;
-    file.url = data.fullPath;
-    file.size = fileBuffer.byteLength;
-    file.owner = user;
-    file.mimeType = fileType?.mime || 'application/octet-stream';
+    const newFile = new File();
+    newFile.name = file.originalname;
+    newFile.url = data.fullPath;
+    newFile.size = fileBuffer.byteLength;
+    newFile.owner = user;
+    newFile.mimeType = fileType?.mime || 'application/octet-stream';
 
     if (uploadFileDto.folderId) {
       const folder = await this.folderRepository.findOne({
@@ -80,16 +81,29 @@ export class FilesService {
       if (!folder) {
         throw new NotFoundException('Folder not found');
       }
-      file.folder = folder;
+      newFile.folder = folder;
     }
     await this.activityLogService.logAction(
       user.id,
       ActivityLogType.UPLOAD,
-      file.id,
+      newFile.id,
       'FILE',
     );
 
-    return this.fileRepository.save(file);
+    return this.fileRepository.save(newFile);
+  }
+
+  async bulkUploadFile(
+    uploadFileDto: UploadFileDto,
+    files: Array<Express.Multer.File>,
+    user: User,
+  ): Promise<File[]> {
+    const uploadedFiles: File[] = [];
+    for (const file of files) {
+      const uploadedFile = await this.uploadFile(uploadFileDto, file, user);
+      uploadedFiles.push(uploadedFile);
+    }
+    return uploadedFiles;
   }
 
   async downloadFile(fileKey: string) {

@@ -7,8 +7,8 @@ export class EncryptionUtil {
   static encryptFile(data: Buffer, secretKey: string): string {
     const key = randomBytes(32); // AES-256 Key
     const iv = randomBytes(16); // Initialization Vector
-    console.log('KEY:', key);
-    console.log('IV:', iv);
+    // console.log('KEY:', key);
+    // console.log('IV:', iv);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
     const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
     // const encrypted = CryptoJS.AES.encrypt(
