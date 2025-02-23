@@ -16,12 +16,14 @@ async function bootstrap() {
   // Apply ValidationPipe globally for DTO validation
   app.useGlobalPipes(new ValidationPipe());
 
+  const frontend = process.env.FRONTEND_URL || 'http://localhost:3001';
   app.enableCors({
-    origin: 'http://localhost:3001', // Allow requests from your frontend
+    origin: frontend, // Allow requests from your frontend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
+  const port = process.env.PORT || 3000;
 
-  await app.listen(String(process.env.PORT));
+  await app.listen(port);
 }
 bootstrap();
