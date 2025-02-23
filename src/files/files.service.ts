@@ -18,6 +18,7 @@ import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLogType } from 'src/common/constants/activity-logs/activity-logs';
 import { Readable } from 'stream';
 import { parse } from 'file-type-mime';
+import { PermissionsService } from 'src/permissions/permissions.service';
 
 @Injectable()
 export class FilesService {
@@ -30,6 +31,7 @@ export class FilesService {
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
     private readonly activityLogService: ActivityLogsService,
+    private readonly permissionsService: PermissionsService,
 
     private configService: ConfigService,
   ) {
@@ -51,16 +53,14 @@ export class FilesService {
     file: Express.Multer.File,
     user: User,
   ): Promise<File> {
-    const secretKey =
-      this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file';
     const fileBuffer = file.buffer;
-    EncryptionUtil.encryptFile(fileBuffer, secretKey);
-    const fileType = parse(fileBuffer);
+    const encryptFile = EncryptionUtil.encryptFile(fileBuffer);
+    const fileType = parse(fileBuffer); // get file type
 
     const uniqueFilename = `${Date.now()}-${file.originalname}`;
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
-      .upload(uniqueFilename, fileBuffer, {
+      .upload(uniqueFilename, encryptFile, {
         contentType: fileType?.mime,
       });
 
@@ -72,6 +72,7 @@ export class FilesService {
     newFile.url = data.fullPath;
     newFile.size = fileBuffer.byteLength;
     newFile.owner = user;
+    newFile.lastModified = new Date();
     newFile.mimeType = fileType?.mime || 'application/octet-stream';
 
     if (uploadFileDto.folderId) {
@@ -90,7 +91,9 @@ export class FilesService {
       'FILE',
     );
 
-    return this.fileRepository.save(newFile);
+    const savedFile = this.fileRepository.save(newFile);
+    await this.permissionsService.setDefaultFilePermissions(newFile, user);
+    return savedFile;
   }
 
   async bulkUploadFile(
@@ -117,6 +120,8 @@ export class FilesService {
     if (error || !data || !file) {
       throw new NotFoundException('File not found');
     }
+    const encryptedBuffer = await data.arrayBuffer(); // Convert the fetched file to ArrayBuffer
+    const fileBuffer = EncryptionUtil.decryptFile(Buffer.from(encryptedBuffer)); // Decrypt the file buffer
 
     // const arrayBuffer = await data.text();
     // const encryptedBase64 = this.bufferToBase64(
@@ -129,15 +134,15 @@ export class FilesService {
     // const decryptedBlob = new Blob([decryptedFile]);
 
     // console.log('FILE SIZE DOWNLOAD', decryptedFile?.length);
-    const arrayBuffer = await data.arrayBuffer();
-    const decryptedBuffer = Buffer.from(arrayBuffer);
+    // const arrayBuffer = await data.arrayBuffer();
+    // const decryptedBuffer = Buffer.from(arrayBuffer);
     return {
-      filebuffer: decryptedBuffer,
+      filebuffer: fileBuffer,
       file,
     };
   }
 
-  async getFiles(folderId: string, user: User): Promise<File[]> {
+  async getFiles(folderId: string, user: User, sort: string): Promise<File[]> {
     // Validate folderId if provided
     if (folderId) {
       const folder = await this.folderRepository.findOne({
@@ -149,11 +154,14 @@ export class FilesService {
       // Check if user has permission to view files in this folder
       return await this.fileRepository.find({
         where: { folder: folder },
+        relations: ['permissions'],
       });
     } else {
       // Return all files user has access to
       return await this.fileRepository.find({
         where: { owner: { id: user.id } },
+        order: { lastModified: sort === 'asc' ? 'ASC' : 'DESC' },
+        relations: ['permissions'],
       });
     }
   }
@@ -169,10 +177,8 @@ export class FilesService {
     }
 
     // Check if the user has permission to access the file
-    if (
-      file.owner.id !== user.id &&
-      !(await this.hasAccessToFile(file, user))
-    ) {
+    const hasAccess = await this.hasAccessToFile(file, user);
+    if (!hasAccess) {
       throw new ForbiddenException('Access denied');
     }
     await this.activityLogService.logAction(
@@ -183,6 +189,35 @@ export class FilesService {
     );
     return file;
   }
+
+  async deleteFile(fileId: string, user: User): Promise<void> {
+    const file = await this.fileRepository.findOne({
+      where: { id: fileId },
+      relations: ['owner'],
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    const hasAccess = await this.hasAccessToFile(file, user);
+    // Check if the user has permission to delete the file
+    if (!hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
+    await this.permissionsService.deletePermissionsByFileId(fileId);
+
+    await this.activityLogService.logAction(
+      user.id,
+      ActivityLogType.DELETE,
+      fileId,
+      'FILE',
+    );
+
+    await this.fileRepository.delete({ id: fileId });
+  }
+
+  // PRIVATE INTERNAL USE ONLY
 
   private async hasAccessToFile(file: File, user: User): Promise<boolean> {
     // Check if the user is the owner of the file
@@ -197,8 +232,9 @@ export class FilesService {
 
     // Check if the file is shared with the user (Shared Link or Permission-based access)
     const sharedAccess = await this.permissionsRepository.findOne({
-      where: { file: file, user: user },
+      where: { file: { id: file.id }, user: { id: user.id } },
     });
+    console.log(file, user);
 
     if (sharedAccess) {
       return true;

@@ -12,15 +12,23 @@ import { User } from 'src/users/entities/user.entity/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
+import { PermissionsService } from 'src/permissions/permissions.service';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([File, Folder, User, Permission, ActivityLog]),
     ConfigModule,
     S3Module,
+    NotificationsModule,
   ],
   controllers: [FilesController],
-  providers: [FilesService, SupabaseService, ActivityLogsService],
+  providers: [
+    FilesService,
+    SupabaseService,
+    ActivityLogsService,
+    PermissionsService,
+  ],
   exports: [TypeOrmModule],
 })
 export class FilesModule {}

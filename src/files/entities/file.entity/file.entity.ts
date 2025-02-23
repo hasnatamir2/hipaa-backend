@@ -39,15 +39,24 @@ export class File {
   @JoinColumn({ name: 'folderId' })
   folder: Folder;
 
-  @OneToMany(() => Permission, (permission) => permission.file)
+  @OneToMany(() => Permission, (permission) => permission.file, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   permissions: Permission[];
 
   @ManyToOne(() => User, (user) => user.files)
   owner: User;
 
-  @OneToMany(() => SharedLink, (sharedLink) => sharedLink.file)
+  @OneToMany(() => SharedLink, (sharedLink) => sharedLink.file, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   sharedLinks: SharedLink[];
 
-  @OneToMany(() => ActivityLog, (activityLog) => activityLog.file)
+  @OneToMany(() => ActivityLog, (activityLog) => activityLog.file, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   activityLogs: ActivityLog[]; // Relation to track file activity logs
 }

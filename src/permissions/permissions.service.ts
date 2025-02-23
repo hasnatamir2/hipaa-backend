@@ -38,7 +38,7 @@ export class PermissionsService {
     newPermissionLevel: PermissionLevel,
   ) {
     const user = await this.userRepository.findOne({
-      where: { id: dto.userId },
+      where: { email: dto.email },
     });
     if (!user) throw new Error('User not found');
 
@@ -102,6 +102,19 @@ export class PermissionsService {
   async setDefaultFolderPermissions(folder: Folder, user: User): Promise<void> {
     const permission = new Permission();
     permission.folder = folder;
+    permission.user = user;
+    permission.canRead = true;
+    permission.canWrite = true;
+    permission.canDelete = true;
+    permission.canShare = true;
+    permission.permissionLevel = PermissionLevel.ADMIN;
+
+    await this.permissionRepository.save(permission);
+  }
+
+  async setDefaultFilePermissions(file: File, user: User): Promise<void> {
+    const permission = new Permission();
+    permission.file = file;
     permission.user = user;
     permission.canRead = true;
     permission.canWrite = true;
@@ -203,6 +216,10 @@ export class PermissionsService {
 
   async deletePermissionsByFolderId(folderId: string): Promise<void> {
     await this.permissionRepository.delete({ folder: { id: folderId } });
+  }
+
+  async deletePermissionsByFileId(fileId: string): Promise<void> {
+    await this.permissionRepository.delete({ file: { id: fileId } });
   }
 
   //

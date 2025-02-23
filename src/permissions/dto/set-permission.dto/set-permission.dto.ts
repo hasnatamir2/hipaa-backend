@@ -1,8 +1,8 @@
-import { IsBoolean, IsUUID } from '@nestjs/class-validator';
+import { IsBoolean, IsUUID, IsString } from '@nestjs/class-validator';
 
 export class SetPermissionDto {
-  @IsUUID()
-  userId: string;
+  @IsString()
+  email: string;
 
   @IsUUID()
   resourceId: string; // This can be either a file or a folder ID.

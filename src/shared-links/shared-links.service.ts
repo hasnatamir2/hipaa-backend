@@ -28,8 +28,7 @@ export class SharedLinksService {
     userId: string,
   ): Promise<SharedLink> {
     const { fileId, password, expiresAt } = createSharedLinkDto;
-    console.log(fileId);
-    const file = await this.fileRepository.find({ where: { id: fileId } });
+    const file = await this.fileRepository.findOne({ where: { id: fileId } });
     if (!file) throw new NotFoundException('File not found');
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -42,7 +41,7 @@ export class SharedLinksService {
     sharedLink.linkToken = linkToken;
     sharedLink.password = password ? await bcrypt.hash(password, 10) : null;
     sharedLink.expiresAt = expiresAt;
-    sharedLink.file = file[0];
+    sharedLink.file = file;
     sharedLink.generatedBy = user;
 
     return this.sharedLinksRepository.save(sharedLink);
@@ -61,7 +60,11 @@ export class SharedLinksService {
     if (sharedLink.expiresAt && sharedLink.expiresAt < new Date()) {
       sharedLink.isActive = false;
       await this.sharedLinksRepository.save(sharedLink);
-      throw new ForbiddenException('Link has expired.');
+      throw new NotFoundException('Link has expired.');
+    }
+
+    if (sharedLink.password && !password) {
+      throw new ForbiddenException('Enter password!');
     }
 
     if (sharedLink.password && password) {

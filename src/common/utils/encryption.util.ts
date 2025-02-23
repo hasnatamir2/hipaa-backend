@@ -1,95 +1,38 @@
 import * as CryptoJS from 'crypto-js';
 import { Buffer } from 'buffer';
-import { createCipheriv, randomBytes } from 'crypto';
+// import { createCipheriv, randomBytes } from 'crypto';
 
 export class EncryptionUtil {
   // AES-256 encryption
-  static encryptFile(data: Buffer, secretKey: string): string {
-    const key = randomBytes(32); // AES-256 Key
-    const iv = randomBytes(16); // Initialization Vector
-    // console.log('KEY:', key);
-    // console.log('IV:', iv);
-    const cipher = createCipheriv('aes-256-gcm', key, iv);
-    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-    // const encrypted = CryptoJS.AES.encrypt(
-    //   CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(data.toString())),
-    //   secretKey,
-    // );
-    return encrypted.toString();
+  private static readonly key = CryptoJS.enc.Utf8.parse(
+    '12345678901234567890123456789012',
+  ); // 32-byte key
+  private static readonly iv = CryptoJS.enc.Utf8.parse('1234567890123456'); // 16-byte IV
+
+  static encryptFile(data: Buffer): Buffer {
+    const wordArray = CryptoJS.lib.WordArray.create(data); // Convert buffer to WordArray
+    const encrypted = CryptoJS.AES.encrypt(wordArray, this.key, {
+      iv: this.iv,
+    });
+
+    // Convert to Base64 and return as buffer
+    const encryptedBase64 = encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+    return Buffer.from(encryptedBase64, 'base64');
   }
 
   // AES-256 decryption
-  static decryptFile(encryptedData: string, secretKey: string): any {
-    const parts = encryptedData.split(':');
-    if (parts.length !== 2) {
-      throw new Error('Invalid encrypted data format');
-    }
+  static decryptFile(encryptedBuffer: Buffer): any {
+    const encryptedBase64 = encryptedBuffer.toString('base64'); // Convert buffer to Base64 string
+    const cipherParams = CryptoJS.lib.CipherParams.create({
+      ciphertext: CryptoJS.enc.Base64.parse(encryptedBase64),
+    });
 
-    const [ivBase64, encryptedBase64] = parts;
+    const decrypted = CryptoJS.AES.decrypt(cipherParams, this.key, {
+      iv: this.iv,
+    });
 
-    const iv = CryptoJS.enc.Base64.parse(ivBase64);
-    const encryptedBytes = CryptoJS.enc.Base64.parse(encryptedBase64);
-
-    const decrypted = CryptoJS.AES.decrypt(
-      { ciphertext: encryptedBytes },
-      secretKey,
-      { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 },
-    );
-
-    // const decryptedData = decrypted.toString(
-    //   CryptoJS.enc.Utf8
-    // );
-    // if (!decryptedData) {
-    //   throw new Error('Decryption failed');
-    // }
-    const decryptedData = Buffer.from(
-      decrypted.toString(CryptoJS.enc.Base64),
-      'base64',
-    );
-    return decryptedData;
+    // Convert the decrypted data back to a buffer (in its original binary format)
+    const decryptedWordArray = CryptoJS.enc.Base64.stringify(decrypted); // Convert to Base64 string first
+    return Buffer.from(decryptedWordArray, 'base64');
   }
-
-  static decryptFileSimplified(encryptedData: string, secretKey: string) {
-    try {
-      // Decrypt the data using AES
-      const decrypted = CryptoJS.AES.decrypt(encryptedData, secretKey);
-
-      // Check if decryption is successful
-      if (!decrypted || !decrypted.sigBytes) {
-        throw new Error('Decryption failed or invalid data');
-      }
-
-      // Convert the decrypted data to a hexadecimal string and then to a Buffer
-      const decryptedData = decrypted.toString(CryptoJS.format.Hex);
-      const buffer = Buffer.from(decryptedData, 'hex');
-      return buffer;
-    } catch (err) {
-      console.error('Error during decryption:', err);
-      return null; // Return null if decryption fails
-    }
-  }
-
-  // convertWordArrayToUint8Array(wordArray: string) {
-  //   const arrayOfWords = wordArray.hasOwnProperty('words')
-  //     ? wordArray.words
-  //     : [];
-
-  //   const length = wordArray.hasOwnProperty('sigBytes')
-  //     ? wordArray.sigBytes
-  //     : arrayOfWords.length * 4;
-
-  //   const uInt8Array = new Uint8Array(length);
-  //   let index = 0;
-  //   let word;
-  //   let i;
-
-  //   for (i = 0; i < length; i++) {
-  //     word = arrayOfWords[i];
-  //     uInt8Array[index++] = word >> 24;
-  //     uInt8Array[index++] = (word >> 16) & 0xff;
-  //     uInt8Array[index++] = (word >> 8) & 0xff;
-  //     uInt8Array[index++] = word & 0xff;
-  //   }
-  //   return uInt8Array;
-  // }
 }
