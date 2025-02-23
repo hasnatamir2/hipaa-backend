@@ -11,6 +11,7 @@ import {
   Query,
   Req,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
@@ -64,11 +65,12 @@ export class FilesController {
   @Get()
   async getFiles(
     @Query('folderId') folderId: string,
+    @Query('sort') sort: string,
     @Req() req: any,
   ): Promise<File[]> {
     try {
       const user = req.user; // get the user from request (from JWT)
-      return await this.filesService.getFiles(folderId, user);
+      return await this.filesService.getFiles(folderId, user, sort);
     } catch (error: any) {
       throw new Error(`Failed to get files ERROR: ${error.message}`);
     }
@@ -81,5 +83,11 @@ export class FilesController {
   ): Promise<File> {
     const user = req.user; // get the user from request (from JWT)
     return await this.filesService.getFileDetails(fileId, user);
+  }
+
+  @Delete(':id')
+  async deleteFile(@Param('id') fileId: string, @Req() req: any) {
+    const user = req.user; // get the user from request (from JWT)
+    return await this.filesService.deleteFile(fileId, user);
   }
 }

@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { File } from 'src/files/entities/file.entity/file.entity'; // Import from the File module
 import { User } from 'src/users/entities/user.entity/user.entity'; // Import from the User module
-import { IsDateString } from '@nestjs/class-validator';
 
 @Entity('shared_links')
 export class SharedLink {
@@ -21,8 +20,7 @@ export class SharedLink {
   @Column({ nullable: true })
   password: string; // Optional password protection (hashed)
 
-  @Column({ type: 'timestamp', nullable: true })
-  @IsDateString()
+  @Column({ nullable: true, type: 'timestamp' })
   expiresAt?: Date; // Expiration date/time for the link
 
   @Column({ default: 0 })

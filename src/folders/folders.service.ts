@@ -75,6 +75,19 @@ export class FoldersService {
       throw new ForbiddenException(
         'You do not have permission to view this folder',
       );
+
+    const folder: Folder[] = await this.folderRepository.find({
+      where: { owner: { id: user.id } },
+    });
+
+    return folder;
+  }
+
+  async getFoldersWithFilesByUserId(user: User): Promise<Folder[]> {
+    if (!user)
+      throw new ForbiddenException(
+        'You do not have permission to view this folder',
+      );
     const folder: Folder[] = await this.folderRepository
       .createQueryBuilder('folder')
       .leftJoinAndSelect('folder.files', 'file') // Joining the files table
@@ -155,6 +168,7 @@ export class FoldersService {
     }
 
     file.folder = folder;
+    file.lastModified = new Date();
     await this.fileRepository.save(file);
 
     return folder;

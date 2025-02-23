@@ -37,6 +37,17 @@ export class FoldersController {
     }
   }
 
+  @Get('/folders-with-files')
+  @UseGuards(JwtAuthGuard)
+  async getFoldersWithFiles(@Req() req: any): Promise<Folder[]> {
+    try {
+      const user = req.user; // get the user from request (from JWT)
+      return await this.foldersService.getFoldersWithFilesByUserId(user);
+    } catch (error: any) {
+      throw new Error(`Failed to get files ERROR: ${error.message}`);
+    }
+  }
+
   // get files in folder based on permission level
   @UseGuards(JwtAuthGuard) // Secure the API
   @Get(':folderId/files')

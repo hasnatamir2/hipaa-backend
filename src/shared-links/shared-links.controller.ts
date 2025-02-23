@@ -9,6 +9,7 @@ import {
   Delete,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { SharedLinksService } from './shared-links.service';
 import { CreateSharedLinkDto } from './dto/create-shared-link.dto/create-shared-link.dto';
@@ -29,7 +30,7 @@ export class SharedLinksController {
   @Get(':token')
   async access(
     @Param('token') token: string,
-    @Body('password') password?: string,
+    @Query('password') password?: string,
   ) {
     return this.sharedLinksService.validateLink(token, password);
   }
