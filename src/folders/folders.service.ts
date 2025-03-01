@@ -145,14 +145,15 @@ export class FoldersService {
     if (!folder) {
       throw new NotFoundException('Folder not found');
     }
+    // console.log('folder', folder);
 
-    const hasAccess = folder.accessibleByGroups.some((group) =>
-      user.groups.find((userGroup) => userGroup.id === group.id),
-    );
+    // const hasAccess = folder.accessibleByGroups.some((group) =>
+    //   user.groups.find((userGroup) => userGroup.id === group.id),
+    // );
 
-    if (!hasAccess) {
-      throw new ForbiddenException('You do not have access to this folder.');
-    }
+    // if (!hasAccess) {
+    //   throw new ForbiddenException('You do not have access to this folder.');
+    // }
 
     const folderPermission = await this.permissionRepository.findOne({
       where: { folder: { id: folderId }, user: { id: user.id } },

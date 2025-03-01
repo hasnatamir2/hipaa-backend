@@ -259,17 +259,20 @@ export class PermissionsService {
     return userLevelIndex >= newLevelIndex;
   }
 
-  // async checkPermission(user: User, folderId: string, action: string) {
-  //   // Check if the user has specific permissions for this action on the folder.
-  //   const permission = await this.permissionRepository.findOne({
-  //     where: { user, folder: { id: folderId }, action },
-  //   });
+  async checkPermission(
+    fileId: string,
+    userId: string,
+    requiredPermission: Permission,
+  ): Promise<boolean> {
+    const permission = await this.permissionRepository
+      .createQueryBuilder('permission')
+      .where('permission.file.id = :fileId', { fileId })
+      .andWhere('permission.user.id = :userId', { userId })
+      .andWhere('permission.permission = :requiredPermission', {
+        requiredPermission,
+      })
+      .getOne();
 
-  //   if (!permission) {
-  //     throw new UnauthorizedException(
-  //       'You do not have permission to perform this action.',
-  //     );
-  //   }
-  //   return permission;
-  // }
+    return !!permission;
+  }
 }

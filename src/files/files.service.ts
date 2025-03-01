@@ -194,7 +194,7 @@ export class FilesService {
   async getFileDetails(fileId: string, user: User): Promise<File> {
     const file = await this.fileRepository.findOne({
       where: { id: fileId },
-      relations: ['owner'],
+      relations: ['owner', 'versions'],
     });
 
     if (!file) {
