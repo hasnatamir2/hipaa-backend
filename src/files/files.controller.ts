@@ -90,4 +90,17 @@ export class FilesController {
     const user = req.user; // get the user from request (from JWT)
     return await this.filesService.deleteFile(fileId, user);
   }
+
+  @Post(':fileId/revert/:versionId')
+  async revertToVersion(
+    @Param('fileId') fileId: string,
+    @Param('versionId') versionId: string,
+  ) {
+    return await this.filesService.revertToVersion(fileId, versionId);
+  }
+
+  @Get(':fileId/versions')
+  async getFileVersions(@Param('fileId') fileId: string) {
+    return await this.filesService.getFileVersions(fileId);
+  }
 }

@@ -31,6 +31,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async getAllUsers(): Promise<User[] | null> {
+    return this.usersRepository.find();
+  }
+
   async updateUserRole(id: string, role: UserRole): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {

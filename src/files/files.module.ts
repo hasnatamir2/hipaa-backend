@@ -3,6 +3,7 @@ import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { File } from './entities/file.entity/file.entity';
+import { FileVersion } from './entities/file.entity/file-version.entity';
 // import { S3Service } from '../shared/s3/s3.service';
 import { Folder } from '../folders/entities/folder.entity/folder.entity'; // <-- Import Folder entity
 import { ConfigModule } from '../config/config.module';
@@ -17,7 +18,14 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([File, Folder, User, Permission, ActivityLog]),
+    TypeOrmModule.forFeature([
+      File,
+      Folder,
+      User,
+      Permission,
+      ActivityLog,
+      FileVersion,
+    ]),
     ConfigModule,
     S3Module,
     NotificationsModule,

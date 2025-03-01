@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  // UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity/permission.entity';
@@ -28,6 +32,7 @@ export class PermissionsService {
     private readonly fileRepository: Repository<File>,
     @InjectRepository(Folder)
     private readonly folderRepository: Repository<Folder>,
+
     private readonly notificationService: NotificationService,
     private readonly activityLogService: ActivityLogsService,
   ) {}
@@ -253,4 +258,18 @@ export class PermissionsService {
 
     return userLevelIndex >= newLevelIndex;
   }
+
+  // async checkPermission(user: User, folderId: string, action: string) {
+  //   // Check if the user has specific permissions for this action on the folder.
+  //   const permission = await this.permissionRepository.findOne({
+  //     where: { user, folder: { id: folderId }, action },
+  //   });
+
+  //   if (!permission) {
+  //     throw new UnauthorizedException(
+  //       'You do not have permission to perform this action.',
+  //     );
+  //   }
+  //   return permission;
+  // }
 }

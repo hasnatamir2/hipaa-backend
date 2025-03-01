@@ -70,6 +70,11 @@ export class FoldersService {
     await this.folderRepository.remove(folder);
   }
 
+  async getAll(): Promise<Folder[]> {
+    const folders = this.folderRepository.find();
+    return folders;
+  }
+
   async getFoldersByUserId(user: User): Promise<Folder[]> {
     if (!user)
       throw new ForbiddenException(
@@ -98,6 +103,31 @@ export class FoldersService {
     return folder;
   }
 
+  async findAccessibleFolders(userId: string): Promise<Folder[]> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['groups'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get folder access from direct assignments to the user or via user groups
+    const accessibleFolders = await this.folderRepository
+      .createQueryBuilder('folder')
+      .leftJoin('folder.owner', 'user') // Folders assigned directly to the user
+      .leftJoin('folder.groups', 'group') // Folders assigned to groups
+      .leftJoin('group.users', 'groupUser') // Users assigned to groups
+      .where(
+        'folder.owner = :userId OR user.id = :userId OR groupUser.id = :userId',
+        { userId },
+      )
+      .getMany();
+
+    return accessibleFolders;
+  }
+
   async getFilesInFolder(folderId: string, user: User): Promise<Folder> {
     // Get the user and their permissions
     const userResponse = await this.userRepository.findOne({
@@ -109,11 +139,19 @@ export class FoldersService {
 
     const folder = await this.folderRepository.findOne({
       where: { id: folderId },
-      relations: ['files', 'permissions'],
+      relations: ['files', 'permissions', 'accessibleByGroups'],
     });
 
     if (!folder) {
       throw new NotFoundException('Folder not found');
+    }
+
+    const hasAccess = folder.accessibleByGroups.some((group) =>
+      user.groups.find((userGroup) => userGroup.id === group.id),
+    );
+
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this folder.');
     }
 
     const folderPermission = await this.permissionRepository.findOne({
@@ -133,23 +171,6 @@ export class FoldersService {
     const accessibleFiles: File[] = folder.files;
     const responseFolder = folder;
     responseFolder.files = accessibleFiles;
-
-    // NOT COMPUTE FRIENDLY but something like this
-    // TODO: check file-level permissions on when file is accessed
-    // for (const file of folder.files) {
-    //   // Find permission for the user on the specific file
-    //   const filePermission = await this.permissionRepository.findOne({
-    //     where: { file: { id: file.id }, user: { id: user.id } },
-    //   });
-
-    //   // Check if user has at least VIEW permission on the file
-    //   if (
-    //     filePermission &&
-    //     filePermission.permissionLevel >= PermissionLevel.VIEW
-    //   ) {
-    //     accessibleFiles.push(file);
-    //   }
-    // }
 
     return responseFolder;
   }

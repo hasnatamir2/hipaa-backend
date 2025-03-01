@@ -5,4 +5,7 @@ import { IsOptional } from '@nestjs/class-validator';
 export class UploadFileDto {
   @IsOptional()
   folderId?: string;
+
+  @IsOptional()
+  fileId?: string;
 }

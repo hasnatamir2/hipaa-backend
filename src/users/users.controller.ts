@@ -35,6 +35,12 @@ export class UsersController {
     return this.usersService.findUserByEmail(email);
   }
 
+  @Get()
+  @Roles(UserRole.ADMIN)
+  async getAllUser() {
+    return this.usersService.getAllUsers();
+  }
+
   @Put(':id/role')
   async updateRole(@Param('id') id: string, @Body('role') role: UserRole) {
     return this.usersService.updateUserRole(id, role);

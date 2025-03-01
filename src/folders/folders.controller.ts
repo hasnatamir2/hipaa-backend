@@ -14,6 +14,7 @@ import { CreateFolderDto } from './dto/create-folder.dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto/update-folder.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
 import { Folder } from './entities/folder.entity/folder.entity';
+import { User } from 'src/users/entities/user.entity/user.entity';
 
 @Controller('folders')
 export class FoldersController {
@@ -22,7 +23,7 @@ export class FoldersController {
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@Body() createFolderDto: CreateFolderDto, @Req() req: any) {
-    const user = req?.user;
+    const user = req?.user as User;
     return this.foldersService.create(createFolderDto, user);
   }
 
@@ -30,18 +31,24 @@ export class FoldersController {
   @UseGuards(JwtAuthGuard)
   async getFolders(@Req() req: any): Promise<Folder[]> {
     try {
-      const user = req.user; // get the user from request (from JWT)
+      const user = req.user as User; // get the user from request (from JWT)
       return await this.foldersService.getFoldersByUserId(user);
     } catch (error: any) {
       throw new Error(`Failed to get files ERROR: ${error.message}`);
     }
   }
 
+  @Get('/all')
+  @UseGuards(JwtAuthGuard)
+  async getAllFodlers(): Promise<Folder[]> {
+    return this.foldersService.getAll();
+  }
+
   @Get('/folders-with-files')
   @UseGuards(JwtAuthGuard)
   async getFoldersWithFiles(@Req() req: any): Promise<Folder[]> {
     try {
-      const user = req.user; // get the user from request (from JWT)
+      const user = req.user as User; // get the user from request (from JWT)
       return await this.foldersService.getFoldersWithFilesByUserId(user);
     } catch (error: any) {
       throw new Error(`Failed to get files ERROR: ${error.message}`);
@@ -52,7 +59,7 @@ export class FoldersController {
   @UseGuards(JwtAuthGuard) // Secure the API
   @Get(':folderId/files')
   getFilesInFolder(@Param('folderId') folderId: string, @Req() req: any) {
-    const user = req?.user;
+    const user = req?.user as User;
     return this.foldersService.getFilesInFolder(folderId, user);
   }
 
@@ -72,5 +79,13 @@ export class FoldersController {
     @Param('fileId') fileId: string,
   ) {
     return this.foldersService.assignFileToFolder(folderId, fileId);
+  }
+
+  // Fetch folders accessible by the current user's groups.
+  @UseGuards(JwtAuthGuard)
+  @Get('accessible')
+  async findAccessibleFolders(@Req() req: any): Promise<Folder[]> {
+    const userId = req.user.id;
+    return await this.foldersService.findAccessibleFolders(userId);
   }
 }

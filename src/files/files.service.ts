@@ -19,6 +19,7 @@ import { ActivityLogType } from 'src/common/constants/activity-logs/activity-log
 import { Readable } from 'stream';
 import { parse } from 'file-type-mime';
 import { PermissionsService } from 'src/permissions/permissions.service';
+import { FileVersion } from './entities/file.entity/file-version.entity';
 
 @Injectable()
 export class FilesService {
@@ -30,6 +31,9 @@ export class FilesService {
     @InjectRepository(Folder) private folderRepository: Repository<Folder>,
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
+    @InjectRepository(FileVersion)
+    private versionRepository: Repository<FileVersion>,
+
     private readonly activityLogService: ActivityLogsService,
     private readonly permissionsService: PermissionsService,
 
@@ -67,13 +71,45 @@ export class FilesService {
     if (error) {
       throw new Error('File upload failed: ' + error.message);
     }
-    const newFile = new File();
-    newFile.name = file.originalname;
-    newFile.url = data.fullPath;
-    newFile.size = fileBuffer.byteLength;
-    newFile.owner = user;
-    newFile.lastModified = new Date();
-    newFile.mimeType = fileType?.mime || 'application/octet-stream';
+
+    let newFile: File;
+
+    if (!uploadFileDto.fileId) {
+      newFile = new File();
+      newFile.name = file.originalname;
+      newFile.url = data.fullPath;
+      newFile.size = fileBuffer.byteLength;
+      newFile.owner = user;
+      newFile.lastModified = new Date();
+      newFile.mimeType = fileType?.mime || 'application/octet-stream';
+      newFile.versions = [];
+      await this.fileRepository.save(newFile);
+    } else {
+      const oldFile = await this.fileRepository.findOne({
+        where: { id: uploadFileDto.fileId },
+        relations: ['versions'],
+      });
+
+      if (!oldFile) {
+        throw new NotFoundException('File not found');
+      }
+      newFile = oldFile;
+      newFile.mimeType = fileType?.mime || 'application/octet-stream';
+      newFile.size = fileBuffer.byteLength;
+    }
+
+    const version = new FileVersion();
+    version.filePath = data.fullPath; // Path of the new file
+    version.fileSize = fileBuffer.byteLength; // Size of the file
+    version.versionNumber = `v${newFile.versions.length + 1}`; // Increment version number
+    version.file = newFile; // Associate with the file entity
+    version.createdAt = new Date();
+    const freshVersion = await this.versionRepository.save(version);
+
+    newFile.currentVersionId = freshVersion.id;
+
+    const newVersion = [...newFile.versions, freshVersion];
+    newFile.versions = JSON.parse(JSON.stringify(newVersion));
 
     if (uploadFileDto.folderId) {
       const folder = await this.folderRepository.findOne({
@@ -84,6 +120,7 @@ export class FilesService {
       }
       newFile.folder = folder;
     }
+
     await this.activityLogService.logAction(
       user.id,
       ActivityLogType.UPLOAD,
@@ -91,7 +128,8 @@ export class FilesService {
       'FILE',
     );
 
-    const savedFile = this.fileRepository.save(newFile);
+    const savedFile = await this.fileRepository.save(newFile);
+
     await this.permissionsService.setDefaultFilePermissions(newFile, user);
     return savedFile;
   }
@@ -123,19 +161,6 @@ export class FilesService {
     const encryptedBuffer = await data.arrayBuffer(); // Convert the fetched file to ArrayBuffer
     const fileBuffer = EncryptionUtil.decryptFile(Buffer.from(encryptedBuffer)); // Decrypt the file buffer
 
-    // const arrayBuffer = await data.text();
-    // const encryptedBase64 = this.bufferToBase64(
-    //   Buffer.from(await data.arrayBuffer()),
-    // );
-    // const decryptedFile = EncryptionUtil.decryptFileSimplified(
-    //   encryptedBase64,
-    //   this.configService.get<string>('JWT_SECRET_KEY') || 'secret-file',
-    // );
-    // const decryptedBlob = new Blob([decryptedFile]);
-
-    // console.log('FILE SIZE DOWNLOAD', decryptedFile?.length);
-    // const arrayBuffer = await data.arrayBuffer();
-    // const decryptedBuffer = Buffer.from(arrayBuffer);
     return {
       filebuffer: fileBuffer,
       file,
@@ -215,6 +240,39 @@ export class FilesService {
     );
 
     await this.fileRepository.delete({ id: fileId });
+  }
+
+  async revertToVersion(fileId: string, versionId: string) {
+    const file = await this.fileRepository.findOne({
+      where: { id: fileId },
+      relations: ['versions'],
+    });
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+    const version = file.versions.find(
+      (v: FileVersion) => v.versionNumber === versionId,
+    );
+
+    if (!version) {
+      throw new NotFoundException('Version not found');
+    }
+
+    file.currentVersionId = versionId;
+    return await this.fileRepository.save(file);
+  }
+
+  async getFileVersions(fileId: string) {
+    const fileEntity = await this.fileRepository.findOne({
+      where: { id: fileId },
+      relations: ['versions'],
+    });
+
+    if (!fileEntity || fileEntity.versions.length === 0) {
+      throw new NotFoundException('No previous versions available.');
+    }
+
+    return fileEntity.versions;
   }
 
   // PRIVATE INTERNAL USE ONLY

@@ -12,6 +12,8 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { SharedLinksModule } from './shared-links/shared-links.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { AuthModule } from './auth/auth.module';
+import { GroupModule } from './group/group.module';
+
 // import { S3Service } from './shared/s3/s3.service';
 // import { AwsSdkModule } from 'nest-aws-sdk';
 // import { S3 } from 'aws-sdk';
@@ -49,6 +51,7 @@ import { SupabaseModule } from 'nestjs-supabase-js';
       secret: process.env.JWT_SECRET_KEY,
     }),
     NotificationsModule,
+    GroupModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, SupabaseService],

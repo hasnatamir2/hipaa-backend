@@ -11,6 +11,7 @@ import { Permission } from 'src/permissions/entities/permission.entity/permissio
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { SharedLink } from 'src/shared-links/entities/shared-link.entity/shared-link.entity';
 import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
+import { FileVersion } from './file-version.entity';
 
 @Entity()
 export class File {
@@ -59,4 +60,10 @@ export class File {
     onDelete: 'CASCADE',
   })
   activityLogs: ActivityLog[]; // Relation to track file activity logs
+
+  @OneToMany(() => FileVersion, (version) => version.file)
+  versions: FileVersion[];
+
+  @Column({ nullable: true })
+  currentVersionId: string;
 }
