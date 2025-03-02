@@ -116,16 +116,24 @@ export class FoldersService {
     // Get folder access from direct assignments to the user or via user groups
     const accessibleFolders = await this.folderRepository
       .createQueryBuilder('folder')
-      .leftJoin('folder.owner', 'user') // Folders assigned directly to the user
-      .leftJoin('folder.groups', 'group') // Folders assigned to groups
-      .leftJoin('group.users', 'groupUser') // Users assigned to groups
+      .leftJoinAndSelect('folder.groups', 'group') // Join and select groups related to folder
+      .leftJoinAndSelect('group.users', 'groupUser') // Join and select users in groups
+      .leftJoinAndSelect('folder.owner', 'user') // Join and select the owner of the folder
       .where(
         'folder.owner = :userId OR user.id = :userId OR groupUser.id = :userId',
         { userId },
       )
       .getMany();
 
-    return accessibleFolders;
+    // Map folders to include group name if shared by a group
+    const foldersWithGroupInfo = accessibleFolders.map((folder) => {
+      return {
+        ...folder,
+        groupName: folder.groups?.length > 0 ? folder.groups[0]?.name : null, // Add group name if shared
+      };
+    });
+
+    return foldersWithGroupInfo;
   }
 
   async getFilesInFolder(folderId: string, user: User): Promise<Folder> {

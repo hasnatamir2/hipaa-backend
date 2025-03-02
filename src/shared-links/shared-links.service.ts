@@ -47,6 +47,16 @@ export class SharedLinksService {
     return this.sharedLinksRepository.save(sharedLink);
   }
 
+  async getByUserId(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.sharedLinksRepository.find({
+      where: { generatedBy: { id: user.id } },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async validateLink(token: string, password?: string): Promise<SharedLink> {
     const sharedLink = await this.sharedLinksRepository.findOne({
       where: { linkToken: token, isActive: true },

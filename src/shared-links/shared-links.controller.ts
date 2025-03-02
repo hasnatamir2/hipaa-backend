@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { SharedLinksService } from './shared-links.service';
 import { CreateSharedLinkDto } from './dto/create-shared-link.dto/create-shared-link.dto';
-// import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth/jwt-auth.guard';
 
 @Controller('shared-links')
@@ -25,6 +24,13 @@ export class SharedLinksController {
   create(@Body() createSharedLinkDto: CreateSharedLinkDto, @Req() req: any) {
     const userId = req?.user.id; // Extract user from the request (added by JwtAuthGuard)
     return this.sharedLinksService.create(createSharedLinkDto, userId);
+  }
+
+  @UseGuards(JwtAuthGuard) // Secure the API
+  @Get()
+  async getByUserId(@Req() req: any) {
+    const userId = req?.user.id;
+    return this.sharedLinksService.getByUserId(userId);
   }
 
   @Get(':token')
