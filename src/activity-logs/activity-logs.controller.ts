@@ -1,16 +1,19 @@
-// activity-log.controller.ts
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Req, Query, UseGuards } from '@nestjs/common';
 import { ActivityLogsService } from './activity-logs.service';
-import { Roles } from 'src/common/decorators/roles/roles';
-import { UserRole } from 'src/common/constants/roles/roles.enum';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
 
 @Controller('activity-logs')
 export class ActivityLogsController {
   constructor(private readonly activityLogsService: ActivityLogsService) {}
 
-  @Get('user/:userId')
-  @Roles(UserRole.ADMIN)
-  getLogsByUser(@Param('userId') userId: string) {
+  @Get()
+  @UseGuards(JwtAuthGuard) // Secure the API
+  getLogsByUser(
+    @Req() req: any,
+    // @Query('offset') offset: number,
+    // @Query('size') size: number,
+  ) {
+    const userId = req?.user.id;
     return this.activityLogsService.getLogsByUser(userId);
   }
 

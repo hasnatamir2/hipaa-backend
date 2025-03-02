@@ -30,11 +30,23 @@ export class ActivityLogsService {
   }
 
   // Get activity logs for a user
-  async getLogsByUser(userId: string): Promise<ActivityLog[]> {
-    return this.activityLogRepository.find({
+  async getLogsByUser(
+    userId: string,
+    // offset: number,
+    // size: number,
+  ): Promise<{ result: ActivityLog[]; total: number }> {
+    // const take = Number(size) || 10;
+    // const skip = Number(offset) || 0;
+    const [result, total] = await this.activityLogRepository.findAndCount({
       where: { user: { id: userId } },
       order: { timestamp: 'DESC' },
+      // take,
+      // skip,
     });
+    return {
+      result,
+      total,
+    };
   }
 
   // Get activity logs for a file or folder
