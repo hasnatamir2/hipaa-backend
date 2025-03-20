@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Folder } from './entities/folder.entity/folder.entity';
 import { CreateFolderDto } from './dto/create-folder.dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto/update-folder.dto';
@@ -40,6 +40,17 @@ export class FoldersService {
     const folder = new Folder();
     folder.owner = user;
     folder.name = createFolderDto.name;
+
+    // Check if parent folder exists (if provided)
+    if (createFolderDto.parentFolderId) {
+      const parentFolder = await this.folderRepository.findOne({
+        where: { id: createFolderDto.parentFolderId },
+      });
+      if (!parentFolder) {
+        throw new NotFoundException('Parent folder not found');
+      }
+      folder.parentFolder = parentFolder;
+    }
 
     const savedFolder = await this.folderRepository.save(folder);
     await this.permissionsService.setDefaultFolderPermissions(
@@ -119,21 +130,37 @@ export class FoldersService {
       .leftJoinAndSelect('folder.groups', 'group') // Join and select groups related to folder
       .leftJoinAndSelect('group.users', 'groupUser') // Join and select users in groups
       .leftJoinAndSelect('folder.owner', 'user') // Join and select the owner of the folder
+      .leftJoinAndSelect('folder.children', 'children') // Recursively join children
+      .leftJoinAndSelect('children.children', 'grandChildren') // Join children of children
       .where(
         'folder.owner = :userId OR user.id = :userId OR groupUser.id = :userId',
         { userId },
       )
       .getMany();
 
-    // Map folders to include group name if shared by a group
-    const foldersWithGroupInfo = accessibleFolders.map((folder) => {
-      return {
+    const folderMap = new Map<string, Folder & { groupName: string | null }>();
+    // First pass: Collect all folders and track their ids
+    const childFolderIds = new Set<string>(); // Track ids of child folders
+
+    accessibleFolders.forEach((folder) => {
+      folderMap.set(folder.id, {
         ...folder,
         groupName: folder.groups?.length > 0 ? folder.groups[0]?.name : null, // Add group name if shared
-      };
+      });
+
+      // Add children to the childFolderIds set
+      folder.children.forEach((child) => {
+        childFolderIds.add(child.id);
+      });
     });
 
-    return foldersWithGroupInfo;
+    // Second pass: Remove child folders from the folderMap
+    childFolderIds.forEach((childId) => {
+      folderMap.delete(childId);
+    });
+
+    // Convert the folder map back to an array
+    return Array.from(folderMap.values());
   }
 
   async getFilesInFolder(folderId: string, user: User): Promise<Folder> {
@@ -202,5 +229,47 @@ export class FoldersService {
     await this.fileRepository.save(file);
 
     return folder;
+  }
+
+  async getFoldersTree(userId: string): Promise<Folder[]> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const topLevelFolders = await this.folderRepository.find({
+      where: { owner: { id: user.id }, parentFolder: IsNull() },
+      relations: ['children', 'children.children', 'files'], // Recursively load children
+    });
+
+    return topLevelFolders;
+  }
+
+  async assignParentFolder(
+    folderId: string,
+    parentFolderId: string,
+    userId: string,
+  ): Promise<Folder> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const folder = await this.folderRepository.findOne({
+      where: { id: folderId },
+    });
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    const parentFolder = await this.folderRepository.findOne({
+      where: { id: parentFolderId },
+    });
+    if (!parentFolder) {
+      throw new NotFoundException('Parent folder not found');
+    }
+
+    folder.parentFolder = parentFolder;
+    return await this.folderRepository.save(folder);
   }
 }

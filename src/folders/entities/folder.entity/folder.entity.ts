@@ -6,6 +6,7 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
 import { File } from '../../../files/entities/file.entity/file.entity';
 import { Permission } from '../../../permissions/entities/permission.entity/permission.entity';
@@ -26,6 +27,13 @@ export class Folder {
 
   @ManyToOne(() => User, (user) => user.folders)
   owner: User;
+
+  @ManyToOne(() => Folder, (folder) => folder.children, { nullable: true })
+  @JoinColumn({ name: 'parentFolderId' }) // Column name for the parent folder
+  parentFolder: Folder;
+
+  @OneToMany(() => Folder, (folder) => folder.parentFolder)
+  children: Folder[];
 
   @OneToMany(() => Permission, (permission) => permission.folder, {
     cascade: true,

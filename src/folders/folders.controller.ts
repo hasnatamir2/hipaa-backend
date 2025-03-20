@@ -88,4 +88,27 @@ export class FoldersController {
     const userId = req.user.id;
     return await this.foldersService.findAccessibleFolders(userId);
   }
+
+  // Fetch folders accessible by the current user's groups.
+  @UseGuards(JwtAuthGuard)
+  @Get('folders-tree')
+  async getFoldersTree(@Req() req: any): Promise<Folder[]> {
+    const userId = req.user.id;
+    return await this.foldersService.getFoldersTree(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':folderId/assign-parent-folder/:parentFolderId')
+  async assignParentFolder(
+    @Param('folderId') folderId: string,
+    @Param('parentFolderId') parentFolderId: string,
+    @Req() req: any,
+  ): Promise<Folder> {
+    const userId = req.user.id;
+    return await this.foldersService.assignParentFolder(
+      folderId,
+      parentFolderId,
+      userId,
+    );
+  }
 }
