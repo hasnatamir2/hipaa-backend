@@ -10,13 +10,19 @@ import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/acti
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { NotificationsModule } from '../notifications/notifications.module'; // Import NotificationsModule here
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
-import { GroupModule } from 'src/group/group.module';
+import { Group } from 'src/group/entities/group.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Folder, File, User, Permission, ActivityLog]),
+    TypeOrmModule.forFeature([
+      Folder,
+      File,
+      User,
+      Permission,
+      ActivityLog,
+      Group,
+    ]),
     NotificationsModule,
-    GroupModule,
   ],
   controllers: [FoldersController],
   providers: [FoldersService, PermissionsService, ActivityLogsService],

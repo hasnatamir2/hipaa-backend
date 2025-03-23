@@ -6,9 +6,10 @@ import { GroupController } from './group.controller';
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { Folder } from 'src/folders/entities/folder.entity/folder.entity';
 import { JwtService } from '@nestjs/jwt';
+import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Group, User, Folder])],
+  imports: [TypeOrmModule.forFeature([Group, User, Folder, Permission])],
   providers: [GroupService, JwtService],
   controllers: [GroupController],
   exports: [GroupService],

@@ -1,4 +1,5 @@
-import { IsBoolean, IsUUID, IsString } from '@nestjs/class-validator';
+import { IsUUID, IsString, IsEnum } from '@nestjs/class-validator';
+import { AccessLevel } from 'src/common/constants/permission-level/permission-level.enum';
 
 export class SetPermissionDto {
   @IsString()
@@ -7,15 +8,6 @@ export class SetPermissionDto {
   @IsUUID()
   resourceId: string; // This can be either a file or a folder ID.
 
-  @IsBoolean()
-  canRead: boolean;
-
-  @IsBoolean()
-  canWrite: boolean;
-
-  @IsBoolean()
-  canShare: boolean;
-
-  @IsBoolean()
-  canDelete: boolean;
+  @IsEnum(AccessLevel)
+  accessLevel: AccessLevel;
 }

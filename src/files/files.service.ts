@@ -202,7 +202,10 @@ export class FilesService {
     }
 
     // Check if the user has permission to access the file
-    const hasAccess = await this.hasAccessToFile(file, user);
+    const hasAccess = await this.permissionsService.canViewFile(
+      user.id,
+      file.id,
+    );
     if (!hasAccess) {
       throw new ForbiddenException('Access denied');
     }

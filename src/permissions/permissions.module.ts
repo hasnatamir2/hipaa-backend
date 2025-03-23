@@ -10,11 +10,19 @@ import { Folder } from '../folders/entities/folder.entity/folder.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/activity-log.entity';
+import { Group } from 'src/group/entities/group.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Permission, User, File, Folder, ActivityLog]), // Inject entities directly
-    NotificationsModule, // Importing NotificationsModule here
+    TypeOrmModule.forFeature([
+      Permission,
+      User,
+      File,
+      Folder,
+      ActivityLog,
+      Group,
+    ]),
+    NotificationsModule,
   ],
   providers: [PermissionsService, ActivityLogsService],
   controllers: [PermissionsController],

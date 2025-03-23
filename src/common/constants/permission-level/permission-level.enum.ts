@@ -16,3 +16,8 @@ export const Level = [
   PermissionLevel.EDIT, // 2
   PermissionLevel.ADMIN, // 3 max
 ];
+
+export enum AccessLevel {
+  READ = 'read',
+  WRITE = 'write',
+}

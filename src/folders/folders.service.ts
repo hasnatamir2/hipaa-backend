@@ -11,10 +11,6 @@ import { UpdateFolderDto } from './dto/update-folder.dto/update-folder.dto';
 import { File } from '../files/entities/file.entity/file.entity';
 import { User } from 'src/users/entities/user.entity/user.entity';
 import { Permission } from 'src/permissions/entities/permission.entity/permission.entity';
-import {
-  Level,
-  PermissionLevel,
-} from 'src/common/constants/permission-level/permission-level.enum';
 import { PermissionsService } from 'src/permissions/permissions.service';
 
 @Injectable()
@@ -190,20 +186,20 @@ export class FoldersService {
     //   throw new ForbiddenException('You do not have access to this folder.');
     // }
 
-    const folderPermission = await this.permissionRepository.findOne({
-      where: { folder: { id: folderId }, user: { id: user.id } },
-    });
+    // const folderPermission = await this.permissionRepository.findOne({
+    //   where: { folder: { id: folderId }, user: { id: user.id } },
+    // });
 
-    // If no folder-level permission is found, deny access
-    if (
-      !folderPermission ||
-      Level.indexOf(folderPermission.permissionLevel) <
-        Level.indexOf(PermissionLevel.VIEW)
-    ) {
-      throw new ForbiddenException(
-        'You do not have permission to view this folder',
-      );
-    }
+    // // If no folder-level permission is found, deny access
+    // if (
+    //   !folderPermission ||
+    //   Level.indexOf(folderPermission.permissionLevel) <
+    //     Level.indexOf(PermissionLevel.VIEW)
+    // ) {
+    //   throw new ForbiddenException(
+    //     'You do not have permission to view this folder',
+    //   );
+    // }
     const accessibleFiles: File[] = folder.files;
     const responseFolder = folder;
     responseFolder.files = accessibleFiles;

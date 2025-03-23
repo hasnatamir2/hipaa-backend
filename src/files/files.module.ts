@@ -15,6 +15,7 @@ import { ActivityLog } from 'src/activity-logs/entities/activity-log.entity/acti
 import { ActivityLogsService } from 'src/activity-logs/activity-logs.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { Group } from 'src/group/entities/group.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
       Permission,
       ActivityLog,
       FileVersion,
+      Group,
     ]),
     ConfigModule,
     S3Module,
