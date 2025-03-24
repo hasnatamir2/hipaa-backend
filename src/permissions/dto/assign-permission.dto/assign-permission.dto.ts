@@ -1,4 +1,5 @@
 import { IsArray, IsEmail, IsEnum, IsString } from '@nestjs/class-validator';
+import { AccessLevel } from 'src/common/constants/permission-level/permission-level.enum';
 
 export class AssignPermissionDto {
   @IsArray()
@@ -9,6 +10,6 @@ export class AssignPermissionDto {
   @IsString()
   fileId: string;
 
-  @IsEnum(['read', 'write'])
-  accessLevel: 'read' | 'write';
+  @IsEnum(AccessLevel)
+  accessLevel: AccessLevel;
 }

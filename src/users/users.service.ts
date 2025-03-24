@@ -39,7 +39,16 @@ export class UsersService {
   }
 
   async getAllUsers(): Promise<User[] | null> {
-    return this.usersRepository.find();
+    const pipedUserData = await this.usersRepository.find();
+    return pipedUserData.map((user) => {
+      return {
+        ...user,
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        passwordHash: '',
+      };
+    });
   }
 
   async updateUserRole(id: string, role: UserRole): Promise<User> {

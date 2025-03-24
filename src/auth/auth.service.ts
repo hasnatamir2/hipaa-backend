@@ -46,9 +46,14 @@ export class AuthService {
     if (!validateUser) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    const pipedUserData = {
+      id: validateUser.id,
+      email: validateUser.email,
+      role: validateUser.role,
+    };
     return {
       access_token: this.generateToken(validateUser),
-      user: validateUser,
+      user: pipedUserData,
     };
   }
 

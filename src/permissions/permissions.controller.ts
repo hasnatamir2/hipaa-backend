@@ -8,7 +8,6 @@ import {
   Put,
 } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
-import { SetPermissionDto } from './dto/set-permission.dto/set-permission.dto';
 import {
   PermissionLevel,
   ResourceType,
@@ -23,18 +22,18 @@ import { AssignGroupPermissionDto } from './dto/assign-group-permission.dto/assi
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
-  @Post(':resourceType')
-  async setPermission(
-    @Param('resourceType') resourceType: ResourceType,
-    @Body() setPermissionDto: SetPermissionDto,
-    @Body('permissionLevel') permissionLevel: PermissionLevel,
-  ) {
-    return this.permissionsService.setPermission(
-      setPermissionDto,
-      resourceType,
-      permissionLevel,
-    );
-  }
+  // @Post(':resourceType')
+  // async setPermission(
+  //   @Param('resourceType') resourceType: ResourceType,
+  //   @Body() setPermissionDto: SetPermissionDto,
+  //   @Body('permissionLevel') permissionLevel: PermissionLevel,
+  // ) {
+  //   return this.permissionsService.setPermission(
+  //     setPermissionDto,
+  //     resourceType,
+  //     permissionLevel,
+  //   );
+  // }
 
   @Get(':resourceType/:resourceId/user/:userId')
   async getPermissions(

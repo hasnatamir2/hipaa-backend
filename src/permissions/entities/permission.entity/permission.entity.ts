@@ -24,6 +24,6 @@ export class Permission {
   @ManyToOne(() => Folder, (folder) => folder.permissions, { nullable: true })
   folder: Folder;
 
-  @Column({ type: 'enum', enum: PermissionLevel })
+  @Column({ type: 'enum', enum: PermissionLevel, nullable: true }) // 👈TODO: Remove it completely
   permissionLevel: PermissionLevel;
 }

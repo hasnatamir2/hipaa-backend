@@ -170,7 +170,7 @@ export class FoldersService {
 
     const folder = await this.folderRepository.findOne({
       where: { id: folderId },
-      relations: ['files', 'permissions', 'accessibleByGroups'],
+      relations: ['files', 'permissions', 'accessibleByGroups', 'owner'],
     });
 
     if (!folder) {
@@ -203,6 +203,12 @@ export class FoldersService {
     const accessibleFiles: File[] = folder.files;
     const responseFolder = folder;
     responseFolder.files = accessibleFiles;
+    responseFolder.owner = {
+      ...folder.owner,
+      id: folder.owner.id,
+      email: folder.owner.email,
+      passwordHash: '',
+    };
 
     return responseFolder;
   }

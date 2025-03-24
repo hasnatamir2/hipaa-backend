@@ -223,7 +223,7 @@ export class PermissionsService {
   async assignPermissionsToUsers(
     emails: string[],
     fileId: string,
-    accessLevel: 'read' | 'write',
+    accessLevel: AccessLevel,
   ): Promise<void> {
     const users = await this.userRepository.find({
       where: { email: In(emails) },
@@ -253,11 +253,20 @@ export class PermissionsService {
     const file = await this.fileRepository.findOne({ where: { id: fileId } });
     if (!file) throw new NotFoundException('File not found');
     const permissions = group.users.map((user) =>
-      this.permissionRepository.create({
-        user,
-        file,
-        accessLevel,
-      }),
+      // this.permissionRepository.create({
+      //   user,
+      //   file,
+      //   accessLevel,
+      //   permissionLevel: PermissionLevel.ADMIN,
+      // }),
+      {
+        const permission = new Permission();
+        permission.user = user;
+        permission.file = file;
+        permission.accessLevel = accessLevel;
+        permission.permissionLevel = PermissionLevel.ADMIN;
+        return permission;
+      },
     );
     await this.permissionRepository.save(permissions);
   }
