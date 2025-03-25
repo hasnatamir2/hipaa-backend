@@ -33,6 +33,8 @@ export class FilesService {
     private permissionsRepository: Repository<Permission>,
     @InjectRepository(FileVersion)
     private versionRepository: Repository<FileVersion>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     private readonly activityLogService: ActivityLogsService,
     private readonly permissionsService: PermissionsService,
@@ -278,6 +280,91 @@ export class FilesService {
     return fileEntity.versions;
   }
 
+  async getSharedFiles(userId: string): Promise<File[]> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['groups'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get files shared with the user directly
+    const directlySharedFiles = await this.fileRepository
+      .createQueryBuilder('file')
+      .innerJoin('file.permissions', 'permission')
+      // .leftJoinAndSelect('file.owner', 'user')
+      .where('permission.userId = :userId', { userId })
+      .andWhere('permission.accessLevel IN (:...accessLevels)', {
+        accessLevels: ['read', 'write'],
+      })
+      // .select([
+      //   'file.id',
+      //   'file.name',
+      //   'file.url',
+      //   'file.size',
+      //   'file.mimeType',
+      //   'file.lastModified',
+      //   'user',
+      // ])
+      .getMany();
+
+    // Get files shared with the user via folders
+    const folderSharedFiles = await this.fileRepository
+      .createQueryBuilder('file')
+      .innerJoin('file.folder', 'folder')
+      .innerJoin('folder.permissions', 'folderPermission')
+      // .leftJoinAndSelect('file.owner', 'user')
+      .where('folderPermission.userId = :userId', { userId })
+      // .select([
+      //   'file.id',
+      //   'file.name',
+      //   'file.url',
+      //   'file.size',
+      //   'file.mimeType',
+      //   'file.lastModified',
+      //   'user',
+      //   'folder.id',
+      //   'folder.name',
+      // ])
+      .getMany();
+
+    // Get files shared via user groups
+    const groupSharedFiles = await this.fileRepository
+      .createQueryBuilder('file')
+      .innerJoin('file.folder', 'folder')
+      .innerJoin('folder.groups', 'group')
+      .innerJoin('group.users', 'groupUser')
+      // .leftJoinAndSelect('file.owner', 'user')
+      .where('groupUser.id = :userId', { userId })
+      // .select([
+      //   'file.id',
+      //   'file.name',
+      //   'file.url',
+      //   'file.size',
+      //   'file.mimeType',
+      //   'file.lastModified',
+      //   'user',
+      //   'folder.id',
+      //   'folder.name',
+      //   'group.id',
+      //   'group.name',
+      // ])
+      .getMany();
+
+    // Combine all files and remove duplicates
+    const allSharedFiles = [
+      ...directlySharedFiles,
+      ...folderSharedFiles,
+      ...groupSharedFiles,
+    ];
+
+    const uniqueSharedFiles = this.removeDuplicateFiles(allSharedFiles);
+
+    return uniqueSharedFiles;
+  }
+
   // PRIVATE INTERNAL USE ONLY
 
   private async hasAccessToFile(file: File, user: User): Promise<boolean> {
@@ -295,7 +382,6 @@ export class FilesService {
     const sharedAccess = await this.permissionsRepository.findOne({
       where: { file: { id: file.id }, user: { id: user.id } },
     });
-    console.log(file, user);
 
     if (sharedAccess) {
       return true;
@@ -310,6 +396,14 @@ export class FilesService {
     stream.push(buffer);
     stream.push(null); // End the stream
     return stream;
+  }
+
+  private removeDuplicateFiles(files: File[]): File[] {
+    const fileMap = new Map<string, File>();
+    files.forEach((file) => {
+      fileMap.set(file.id, file);
+    });
+    return Array.from(fileMap.values());
   }
 
   private bufferToBase64(blob: Buffer): string {

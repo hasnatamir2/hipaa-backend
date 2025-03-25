@@ -76,6 +76,13 @@ export class FilesController {
     }
   }
 
+  @Get('shared-with-me')
+  async getSharedFiles(@Req() req) {
+    const userId = req.user.id; // Assuming user info is added to request by auth middleware
+    const sharedFiles = await this.filesService.getSharedFiles(userId);
+    return sharedFiles;
+  }
+
   @Get(':id')
   async getFileDetails(
     @Param('id') fileId: string,
